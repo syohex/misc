@@ -2,31 +2,31 @@
 use strict;
 use warnings;
 
-use Furl;
+use HTTP::Tiny;
 use JSON::PP;
 use Encode;
 use Archive::Tar;
 use IO::Uncompress::Gunzip qw(:all);
 
-my $client = Furl->new;
+my $client = HTTP::Tiny->new;
 my $res = $client->get('https://api.github.com/repos/cli/cli/releases/latest');
-unless ($res->is_success) {
-    die "Failed to download. " + $res->status_line;
+unless ($res->{success}) {
+    die "Failed to download. " + $res->{reason};
 }
 
-my $json = decode_json(decode_utf8 $res->content);
+my $json = decode_json(decode_utf8 $res->{content});
 printf "Download version %s\n", $json->{tag_name};
 
 for my $asset (@{$json->{assets}}) {
     my $url = $asset->{browser_download_url};
     if ($url =~ m/linux_amd64\.tar\.gz$/) {
         $res = $client->get($url);
-        unless ($res->is_success) {
+        unless ($res->{success}) {
             die "Failed to $url";
         }
 
         my $buffer;
-        gunzip \$res->content, \$buffer or die "cannot gunzip: $GunzipError";
+        gunzip \$res->{content}, \$buffer or die "cannot gunzip: $GunzipError";
 
         open my $fh, '<:raw', \$buffer or die "can't open as string";
 
