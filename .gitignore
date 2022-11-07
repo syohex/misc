@@ -2,7 +2,11 @@
 .idea/
 *~
 
+# C++
 *.o
 *.out
 *.exe
 *.pdb
+
+# Rust
+target/
