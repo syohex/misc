@@ -34,3 +34,11 @@ https://www.oreilly.com/library/view/c-software-design/9781098113155/
 - リスコフの置換原則の話
 - 抽象化は requirementsと expectationsの表現である
 - 数学的などでは成り立つ関係がソフトウェア的になりたつとは限らない. 例長方形と正方形. インターフェス次第ではリスコフの置換原則を満たさないという話を例を挙げて説明
+
+### Guideline 17: Consider std::variant for Implementing Visitor
+
+- `std::variant` を使った visitorパターンの実装の話
+- `std::variant` + `std::visit` で代数的データ型っぽく使う
+- 静的にメソッド解決などをできるため, 動的なポリモーフィズムよりもパフォーマンス的にも良いとのこと
+
+`std::variant`の使い方を初めて知った. どういうところに利用できるのかわかってなかったけど, `std::visit` と合わせて使うものだったのか
