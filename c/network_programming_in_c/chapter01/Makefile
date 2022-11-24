@@ -12,5 +12,6 @@ get_hostname2.out: get_hostname2.c
 interfaces.out: interfaces.c
 	gcc -std=c17 -Wall -fsanitize=address,undefined -o $@ $^
 
+.PHONY: clean
 clean:
 	-rm -f *.o *.out
