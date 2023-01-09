@@ -1,71 +1,112 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-static void print_matrix(char matrix[5][5], size_t size) {
-    for (size_t i = 0; i < size; ++i) {
+typedef struct {
+    size_t rows;
+    size_t cols;
+    size_t size;
+    char **data;
+} matrix_t;
+
+static matrix_t init_matrix(size_t rows, size_t cols) {
+    matrix_t ret = {
+        .rows = rows,
+        .cols = cols,
+        .data = NULL,
+    };
+
+    ret.size = rows >= cols ? rows : cols;
+    ret.data = malloc(sizeof(char *) * ret.size);
+    for (size_t i = 0; i < ret.size; ++i) {
+        ret.data[i] = malloc(sizeof(char) * ret.size);
+    }
+
+    return ret;
+}
+
+static void destroy_matrix(matrix_t *matrix) {
+    for (size_t i = 0; i < matrix->size; ++i) {
+        free(matrix->data[i]);
+    }
+    free(matrix->data);
+}
+
+static void print_matrix(matrix_t *matrix) {
+    for (size_t i = 0; i < matrix->rows; ++i) {
         printf("[");
-        for (size_t j = 0; j < size; ++j) {
-            printf(" %c ", matrix[i][j]);
+        for (size_t j = 0; j < matrix->cols; ++j) {
+            printf(" %c ", matrix->data[i][j]);
         }
         printf("]\n");
     }
 }
 
-static void rotating_matrix(char matrix[5][5], size_t size) {
-    for (size_t i = 0; i < size; ++i) {
-        for (size_t j = i; j < size; ++j) {
-            char tmp = matrix[i][j];
-            matrix[i][j] = matrix[j][i];
-            matrix[j][i] = tmp;
+static void rotating_matrix(matrix_t *matrix) {
+    size_t tmp = matrix->rows;
+    matrix->rows = matrix->cols;
+    matrix->cols = tmp;
+
+    for (size_t i = 0; i < matrix->size; ++i) {
+        for (size_t j = i; j < matrix->size; ++j) {
+            char tmp = matrix->data[i][j];
+            matrix->data[i][j] = matrix->data[j][i];
+            matrix->data[j][i] = tmp;
         }
     }
 
-    for (size_t i = 0; i < size; ++i) {
-        for (size_t j = 0; j < size / 2; ++j) {
-            char tmp = matrix[i][j];
-            matrix[i][j] = matrix[i][size - j - 1];
-            matrix[i][size - j - 1] = tmp;
-        }
-    }
-}
-
-void check(char matrix[5][5], char expected[5][5], size_t size) {
-    for (size_t i = 0; i < size; ++i) {
-        for (size_t j = i; j < size; ++j) {
-            if (matrix[i][j] != expected[i][j]) {
-                printf("unexpected matrix[%zd][%zd]=%c(expected: %c)\n", i, j, matrix[i][j], expected[i][j]);
-                exit(1);
-            }
+    for (size_t i = 0; i < matrix->size; ++i) {
+        for (size_t j = 0; j < matrix->size / 2; ++j) {
+            char tmp = matrix->data[i][j];
+            size_t k = matrix->cols - j - 1;
+            matrix->data[i][j] = matrix->data[i][k];
+            matrix->data[i][k] = tmp;
         }
     }
 }
 
 int main(void) {
-    // clang-format off
-    char matrix[5][5] = {
-        {'c', 'b', 'v', 't', 'b'},
-        {'t', 'e', 'g', 'v', 'm'},
-        {'p', 'v', 'v', 'k', 'a'},
-        {'h', 'm', 'z', 'o', 'i'},
-        {'x', 'u', 'v', 't', 't'},
-    };
-    char expected[5][5] = {
-        {'x', 'h', 'p', 't', 'c'},
-        {'u', 'm', 'v', 'e', 'b'},
-        {'v', 'z', 'v', 'g', 'v'},
-        {'t', 'o', 'k', 'v', 't'},
-        {'t', 'i', 'a', 'm', 'b'},
-    };
-    // clang-format on
+    {
+        matrix_t m = init_matrix(5, 5);
+        memcpy(m.data[0], "cbvtb", 5);
+        memcpy(m.data[1], "tegvm", 5);
+        memcpy(m.data[2], "pvvka", 5);
+        memcpy(m.data[3], "hmzoi", 5);
+        memcpy(m.data[4], "xuvtt", 5);
 
-    printf("## Original\n");
-    print_matrix(matrix, 5);
-    rotating_matrix(matrix, 5);
+        printf("## Original\n");
+        print_matrix(&m);
+        rotating_matrix(&m);
 
-    printf("## Rotated\n");
-    print_matrix(matrix, 5);
+        printf("## Rotated 90\n");
+        print_matrix(&m);
 
-    check(matrix, expected, 5);
+        printf("## Rotated 180\n");
+        rotating_matrix(&m);
+        print_matrix(&m);
+
+        destroy_matrix(&m);
+    }
+    {
+        matrix_t m = init_matrix(3, 4);
+        memcpy(m.data[0], "1234", 4);
+        memcpy(m.data[1], "2345", 4);
+        memcpy(m.data[2], "3456", 4);
+
+        printf("## Original\n");
+        print_matrix(&m);
+        rotating_matrix(&m);
+
+        printf("## Rotated 90\n");
+        print_matrix(&m);
+
+        printf("## Rotated 180\n");
+        rotating_matrix(&m);
+        print_matrix(&m);
+
+        destroy_matrix(&m);
+    }
+
     return 0;
 }
