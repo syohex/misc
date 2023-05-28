@@ -14,7 +14,7 @@ import (
 
 var htmlTemplate = `
 <a href="{{.URL}}" target="_blank">
-<img src="{{.Image}}" alt="{{.Title}}" width=800 />
+<img src="{{.Image}}" alt="{{.Title}}" {{.Width}} />
 </a>
 
 <p>
@@ -25,6 +25,7 @@ type Data struct {
 	Title string
 	URL   string
 	Image string
+	Width template.HTMLAttr
 }
 
 func copyToClipboard(text string) error {
@@ -33,7 +34,7 @@ func copyToClipboard(text string) error {
 	return cmd.Run()
 }
 
-func dmm(url string, t *template.Template) (*Data, error) {
+func (d *Data) dmm() error {
 	c := colly.NewCollector()
 
 	var cookies []*http.Cookie
@@ -44,12 +45,8 @@ func dmm(url string, t *template.Template) (*Data, error) {
 		Domain: ".dmm.co.jp",
 	})
 
-	d := &Data{
-		URL: url,
-	}
-
 	if err := c.SetCookies("https://www.dmm.co.jp", cookies); err != nil {
-		return nil, err
+		return err
 	}
 
 	c.OnHTML("a[target]", func(e *colly.HTMLElement) {
@@ -65,19 +62,11 @@ func dmm(url string, t *template.Template) (*Data, error) {
 		}
 	})
 
-	if err := c.Visit(url); err != nil {
-		return nil, err
-	}
-
-	return d, nil
+	return c.Visit(d.URL)
 }
 
-func sokmil(url string, t *template.Template) (*Data, error) {
+func (d *Data) sokmil() error {
 	c := colly.NewCollector()
-
-	d := &Data{
-		URL: url,
-	}
 
 	c.OnHTML("a.sokmil-lightbox-jacket", func(e *colly.HTMLElement) {
 		if d.Image == "" {
@@ -88,19 +77,13 @@ func sokmil(url string, t *template.Template) (*Data, error) {
 		d.Title = e.Text
 	})
 
-	if err := c.Visit(url); err != nil {
-		return nil, err
-	}
-
-	return d, nil
+	return c.Visit(d.URL)
 }
 
-func knights(url string, t *template.Template) (*Data, error) {
-	c := colly.NewCollector()
+func (d *Data) knights() error {
+	d.Width = "width=800"
 
-	d := &Data{
-		URL: url,
-	}
+	c := colly.NewCollector()
 
 	c.OnHTML(".entry-inner > p > a", func(e *colly.HTMLElement) {
 		if d.Image == "" {
@@ -114,19 +97,11 @@ func knights(url string, t *template.Template) (*Data, error) {
 		d.Title = e.Text
 	})
 
-	if err := c.Visit(url); err != nil {
-		return nil, err
-	}
-
-	return d, nil
+	return c.Visit(d.URL)
 }
 
-func mgs(url string, t *template.Template) (*Data, error) {
+func (d *Data) mgs() error {
 	c := colly.NewCollector()
-
-	d := &Data{
-		URL: url,
-	}
 
 	var cookies []*http.Cookie
 	cookies = append(cookies, &http.Cookie{
@@ -137,7 +112,7 @@ func mgs(url string, t *template.Template) (*Data, error) {
 	})
 
 	if err := c.SetCookies("https://mgstage.com", cookies); err != nil {
-		return nil, err
+		return err
 	}
 
 	c.OnHTML("a.link_magnify", func(e *colly.HTMLElement) {
@@ -149,11 +124,7 @@ func mgs(url string, t *template.Template) (*Data, error) {
 		d.Title = strings.TrimSpace(e.Text)
 	})
 
-	if err := c.Visit(url); err != nil {
-		return nil, err
-	}
-
-	return d, nil
+	return c.Visit(d.URL)
 }
 
 func main() {
@@ -172,32 +143,27 @@ func _main() int {
 	}
 
 	url := os.Args[1]
-	var d *Data
+	d := &Data{
+		URL: url,
+	}
+
 	if strings.Contains(url, "dmm.co.jp") {
-		d, err = dmm(url, t)
-		if err != nil {
-			log.Fatal(err)
-		}
+		err = d.dmm()
 	} else if strings.Contains(url, "sokmil.com") {
-		d, err = sokmil(url, t)
-		if err != nil {
-			log.Fatal(err)
-		}
+		err = d.sokmil()
 	} else if strings.Contains(url, "knights-visual.com") {
-		d, err = knights(url, t)
-		if err != nil {
-			log.Fatal(err)
-		}
+		err = d.knights()
 	} else if strings.Contains(url, "mgstage.com") {
-		d, err = mgs(url, t)
-		if err != nil {
-			log.Fatal(err)
-		}
+		err = d.mgs()
 	} else {
 		log.Fatalf("unsuppoerted url: %s", url)
 	}
 
-	if err := t.Execute(os.Stdout, &d); err != nil {
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := t.Execute(os.Stdout, d); err != nil {
 		fmt.Println(err)
 		return 1
 	}
