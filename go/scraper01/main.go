@@ -14,7 +14,7 @@ import (
 
 var htmlTemplate = `
 <a href="{{.URL}}" target="_blank">
-<img src="{{.Image}}" alt="{{.Title}}" />
+<img src="{{.Image}}" alt="{{.Title}}" width=800 />
 </a>
 
 <p>
@@ -105,6 +105,9 @@ func knights(url string, t *template.Template) (*Data, error) {
 	c.OnHTML(".entry-inner > p > a", func(e *colly.HTMLElement) {
 		if d.Image == "" {
 			d.Image = e.Attr("href")
+			if strings.HasPrefix(d.Image, "/") {
+				d.Image = "https://www.knights-visual.com" + d.Image
+			}
 		}
 	})
 	c.OnHTML("h1.entry-title", func(e *colly.HTMLElement) {
