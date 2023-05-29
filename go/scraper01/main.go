@@ -50,9 +50,17 @@ func (d *Data) dmm() error {
 		return err
 	}
 
+	// video a
 	c.OnHTML("a[target]", func(e *colly.HTMLElement) {
 		target := e.Attr("target")
 		if d.Image == "" && target == "_package" {
+			d.Image = e.Attr("href")
+		}
+	})
+	// mono
+	c.OnHTML("a[name]", func(e *colly.HTMLElement) {
+		name := e.Attr("name")
+		if d.Image == "" && name == "package-image" {
 			d.Image = e.Attr("href")
 		}
 	})
