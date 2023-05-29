@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -127,6 +128,15 @@ func (d *Data) mgs() error {
 	return c.Visit(d.URL)
 }
 
+func stripQueryString(urlStr string) (string, error) {
+	url, err := url.Parse(os.Args[1])
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s://%s%s", url.Scheme, url.Host, url.Path), nil
+}
+
 func main() {
 	os.Exit(_main())
 }
@@ -142,7 +152,11 @@ func _main() int {
 		log.Fatal(err)
 	}
 
-	url := os.Args[1]
+	url, err := stripQueryString(os.Args[1])
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	d := &Data{
 		URL: url,
 	}
