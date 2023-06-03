@@ -1,15 +1,17 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/gocolly/colly/v2"
 )
 
@@ -22,17 +24,36 @@ var htmlTemplate = `
 </p>
 `
 
-type Data struct {
-	Title string
-	URL   string
-	Image string
-	Width template.HTMLAttr
+type Config struct {
+	Dmm    AffiliateInfo `json:"dmm"`
+	Sokmil AffiliateInfo `json:"sokmil"`
 }
 
-func copyToClipboard(text string) error {
-	cmd := exec.Command("xsel", "--input", "--clipboard")
-	cmd.Stdin = strings.NewReader(text)
-	return cmd.Run()
+type AffiliateInfo struct {
+	Id string `json:"id"`
+}
+
+type Data struct {
+	Title  string
+	URL    string
+	Image  string
+	Width  template.HTMLAttr
+	config Config
+}
+
+func (d *Data) readConfig() error {
+	dir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	configFile := filepath.Join(dir, ".config", "blog", "config.json")
+	file, err := os.Open(configFile)
+	if err != nil {
+		return err
+	}
+
+	return json.NewDecoder(file).Decode(&d.config)
 }
 
 func (d *Data) dmm() error {
@@ -71,6 +92,20 @@ func (d *Data) dmm() error {
 		}
 	})
 
+	u, err := url.Parse("https://al.dmm.co.jp/")
+	if err != nil {
+		return err
+	}
+
+	q := u.Query()
+	q.Set("lurl", d.URL)
+	q.Set("af_id", d.config.Dmm.Id)
+	q.Set("ch", "link_tool")
+	q.Set("ch_id", "link")
+
+	u.RawQuery = q.Encode()
+	d.URL = u.String()
+
 	return c.Visit(d.URL)
 }
 
@@ -85,6 +120,20 @@ func (d *Data) sokmil() error {
 	c.OnHTML("h1.page-title", func(e *colly.HTMLElement) {
 		d.Title = e.Text
 	})
+
+	u, err := url.Parse(d.URL)
+	if err != nil {
+		return err
+	}
+
+	q := u.Query()
+	q.Set("affi", d.config.Sokmil.Id)
+	q.Set("utm_source", "sokmil_ad")
+	q.Set("utm_medium", "affiliate")
+	q.Set("utm_campaign", d.config.Sokmil.Id)
+
+	u.RawQuery = q.Encode()
+	d.URL = u.String()
 
 	return c.Visit(d.URL)
 }
@@ -145,6 +194,10 @@ func stripQueryString(urlStr string) (string, error) {
 	return fmt.Sprintf("%s://%s%s", url.Scheme, url.Host, url.Path), nil
 }
 
+func copyToClipboard(text string) error {
+	return clipboard.WriteAll(text)
+}
+
 func main() {
 	os.Exit(_main())
 }
@@ -167,6 +220,10 @@ func _main() int {
 
 	d := &Data{
 		URL: url,
+	}
+
+	if err := d.readConfig(); err != nil {
+		log.Fatal(err)
 	}
 
 	if strings.Contains(url, "dmm.co.jp") {
