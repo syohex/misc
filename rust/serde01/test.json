@@ -1,0 +1,17 @@
+[
+  {
+    "name": "alice",
+    "age": 42,
+    "description": "She is a woman"
+  },
+  {
+    "name": "bob",
+    "age": 68,
+    "description": "he is strong"
+  },
+  {
+    "name": "chris",
+    "age": 39,
+    "description": "he is a good person"
+  }
+]
