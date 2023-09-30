@@ -28,7 +28,7 @@ var wikiTemplate = `//{{.Date}} {{.ID}}
 [[{{.Title}}（{{.Maker}}/{{.Label | NormalizeLabel}}）>{{.URL}}]] [[（レーベル一覧）>{{.Label}}]]
 [[{{.SmallImage}}>{{.LargeImage}}]]`
 
-var idRegex = regexp.MustCompile(`^([a-zA-Z]+)(\d+)$`)
+var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)$`)
 var labelRegex = regexp.MustCompile(`^([^(（)]+)`)
 
 func convertID(id string) string {
