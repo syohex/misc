@@ -22,14 +22,23 @@ type Data struct {
 	SmallImage string
 	LargeImage string
 	ID         string
+	MakerLabel string
 }
 
 var wikiTemplate = `//{{.Date}} {{.ID}}
-[[{{.Title}}（{{.Maker}}/{{.Label | NormalizeLabel}}）>{{.URL}}]] [[（レーベル一覧）>{{.Label}}]]
+[[{{.Title}}（{{.MakerLabel}}）>{{.URL}}]] [[（レーベル一覧）>{{.Label}}]]
 [[{{.SmallImage}}>{{.LargeImage}}]]`
 
 var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)$`)
 var labelRegex = regexp.MustCompile(`^([^(（)]+)`)
+
+func makerLabel(maker string, label string) string {
+	if maker == label {
+		return maker
+	}
+
+	return fmt.Sprintf("%s/%s", maker, normalizeLabel(label))
+}
 
 func convertID(id string) string {
 	m := idRegex.FindStringSubmatch(id)
@@ -40,7 +49,7 @@ func convertID(id string) string {
 	return fmt.Sprintf("%s-%s", strings.ToUpper(m[1]), m[2])
 }
 
-func NormalizeLabel(label string) string {
+func normalizeLabel(label string) string {
 	m := labelRegex.FindStringSubmatch(label)
 	if m == nil {
 		return label
@@ -121,11 +130,7 @@ func _main() int {
 		return 1
 	}
 
-	funcMap := template.FuncMap{
-		"NormalizeLabel": NormalizeLabel,
-	}
-
-	t, err := template.New("test").Funcs(funcMap).Parse(wikiTemplate)
+	t, err := template.New("test").Parse(wikiTemplate)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse template: %v\n", err)
 		return 1
@@ -145,6 +150,8 @@ func _main() int {
 		fmt.Fprintf(os.Stderr, "failed to extract info from %s(%v)\n", url, err)
 		return 1
 	}
+
+	d.MakerLabel = makerLabel(d.Maker, d.Label)
 
 	var b bytes.Buffer
 	if err := t.Execute(&b, d); err != nil {
