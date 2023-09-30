@@ -25,10 +25,11 @@ type Data struct {
 }
 
 var wikiTemplate = `//{{.Date}} {{.ID}}
-[[{{.Title}}（{{.Maker}}/{{.Label}}）>{{.URL}}]] [[（レーベル一覧）>{{.Label}}]]
+[[{{.Title}}（{{.Maker}}/{{.Label | NormalizeLabel}}）>{{.URL}}]] [[（レーベル一覧）>{{.Label}}]]
 [[{{.SmallImage}}>{{.LargeImage}}]]`
 
 var idRegex = regexp.MustCompile(`^([a-zA-Z]+)(\d+)$`)
+var labelRegex = regexp.MustCompile(`^([^(（)]+)`)
 
 func convertID(id string) string {
 	m := idRegex.FindStringSubmatch(id)
@@ -37,6 +38,15 @@ func convertID(id string) string {
 	}
 
 	return fmt.Sprintf("%s-%s", strings.ToUpper(m[1]), m[2])
+}
+
+func NormalizeLabel(label string) string {
+	m := labelRegex.FindStringSubmatch(label)
+	if m == nil {
+		return label
+	}
+
+	return m[1]
 }
 
 func (d *Data) dmm(url string) error {
@@ -111,7 +121,11 @@ func _main() int {
 		return 1
 	}
 
-	t, err := template.New("test").Parse(wikiTemplate)
+	funcMap := template.FuncMap{
+		"NormalizeLabel": NormalizeLabel,
+	}
+
+	t, err := template.New("test").Funcs(funcMap).Parse(wikiTemplate)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse template: %v\n", err)
 		return 1
