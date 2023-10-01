@@ -33,7 +33,7 @@ var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)$`)
 var labelRegex = regexp.MustCompile(`^([^(（)]+)`)
 
 func makerLabel(maker string, label string) string {
-	if maker == label {
+	if maker == label || strings.Contains(maker, label) {
 		return maker
 	}
 
