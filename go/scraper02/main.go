@@ -151,6 +151,9 @@ func _main() int {
 		return 1
 	}
 
+	if d.Label == "" {
+		d.Label = d.Maker
+	}
 	d.MakerLabel = makerLabel(d.Maker, d.Label)
 
 	var b bytes.Buffer
