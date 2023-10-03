@@ -23,6 +23,7 @@ type Data struct {
 	LargeImage string
 	ID         string
 	MakerLabel string
+	Performers []string
 }
 
 var wikiTemplate = `//{{.Date}} {{.ID}}
@@ -47,6 +48,15 @@ func convertID(id string) string {
 	}
 
 	return fmt.Sprintf("%s-%s", strings.ToUpper(m[1]), m[2])
+}
+
+func formatPerformers(ps []string) string {
+	var ss []string
+	for _, p := range ps {
+		ss = append(ss, fmt.Sprintf("[[%s]]", p))
+	}
+
+	return strings.Join(ss, "／")
 }
 
 func normalizeLabel(label string) string {
@@ -103,6 +113,10 @@ func (d *Data) dmm(url string) error {
 		} else if strings.Contains(link, "label") {
 			d.Label = e.Text
 		}
+	})
+
+	c.OnHTML("td span#performer a", func(e *colly.HTMLElement) {
+		d.Performers = append(d.Performers, strings.TrimSpace(e.Text))
 	})
 
 	c.OnHTML("meta[property=og\\:image]", func(e *colly.HTMLElement) {
@@ -163,6 +177,10 @@ func _main() int {
 	}
 
 	output := b.String()
+	if len(d.Performers) > 1 {
+		output += fmt.Sprintf("\n出演者: %s", formatPerformers(d.Performers))
+	}
+
 	fmt.Println(output)
 
 	if err := clipboard.WriteAll(output); err != nil {
