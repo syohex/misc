@@ -38,7 +38,7 @@ func makerLabel(maker string, label string) string {
 		return maker
 	}
 
-	return fmt.Sprintf("%s/%s", maker, normalizeLabel(label))
+	return fmt.Sprintf("%s/%s", maker, label)
 }
 
 func convertID(id string) string {
@@ -111,7 +111,7 @@ func (d *Data) dmm(url string) error {
 		if strings.Contains(link, "maker") {
 			d.Maker = e.Text
 		} else if strings.Contains(link, "label") {
-			d.Label = e.Text
+			d.Label = normalizeLabel(e.Text)
 		}
 	})
 
