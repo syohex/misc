@@ -92,8 +92,8 @@ func (d *Data) dmm(url string) error {
 			return
 		}
 
-		if d.Date == "" && strings.HasPrefix(state, "発売日") {
-			d.Date = strings.ReplaceAll(e.Text, "/", ".")
+		if d.Date == "" && (strings.HasPrefix(state, "発売日") || strings.HasPrefix(state, "商品発売日")) {
+			d.Date = strings.ReplaceAll(strings.TrimSpace(e.Text), "/", ".")
 			return
 		} else if d.ID == "" && strings.HasPrefix(state, "品番") {
 			d.ID = convertID(e.Text)
