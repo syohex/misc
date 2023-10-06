@@ -11,7 +11,7 @@ import (
 func main() {
 	args := os.Args[1:]
 	if len(args) == 0 {
-		fmt.Printf("Usage: %s p1 p2 p3 ...", os.Args[0])
+		fmt.Printf("Usage: %s p1 p2 p3 ...\n", os.Args[0])
 		return
 	}
 
