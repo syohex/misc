@@ -3,10 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/atotto/clipboard"
 )
+
+var re = regexp.MustCompile(`^([^(（ ]+)`)
 
 func main() {
 	args := os.Args[1:]
@@ -17,7 +20,13 @@ func main() {
 
 	var ws []string
 	for _, a := range args {
-		ws = append(ws, fmt.Sprintf("[[%s]]", a))
+		a = strings.TrimSpace(a)
+		m := re.FindStringSubmatch(a)
+		if len(m) == 0 {
+			continue
+		}
+
+		ws = append(ws, fmt.Sprintf("[[%s]]", m[1]))
 	}
 
 	output := strings.Join(ws, "／")
