@@ -14,12 +14,22 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
-var count int = 0
+var start int
+var count int
 var released = true
 
 func init() {
-	flag.IntVar(&count, "n", 10, "print list count")
+	var inclusive bool
+	flag.BoolVar(&inclusive, "i", false, "start from zero")
+	flag.IntVar(&count, "c", 10, "print list count")
 	flag.Parse()
+
+	if inclusive {
+		start = 0
+		count = count - 1
+	} else {
+		start = 1
+	}
 }
 
 type Data struct {
@@ -177,7 +187,7 @@ func _main() int {
 	}
 
 	var b bytes.Buffer
-	for i := 1; i <= count; i++ {
+	for i := start; i <= count; i++ {
 		num := baseNumber + i
 
 		d := &Data{
