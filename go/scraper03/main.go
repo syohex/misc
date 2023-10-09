@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -44,6 +45,7 @@ type Data struct {
 
 var listTemplate = `|[[{{.ID}}>{{.URL}}]]|[[{{.SmallImage}}>{{.LargeImage}}]]|{{.Title}}|{{.Performer}}|{{.Date}}||`
 var separator = `|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|`
+var performerRegex = regexp.MustCompile(`^([^(（]+)`)
 
 func formatPerformers(ps []string) string {
 	if len(ps) == 0 {
@@ -82,6 +84,16 @@ func generateImageURL(baseURL string, baseID string, id string, num int) string 
 	return strings.ReplaceAll(baseURL, baseID, idInURL(id, num))
 }
 
+func stripPerformer(s string) string {
+	s = strings.TrimSpace(s)
+	m := performerRegex.FindStringSubmatch(s)
+	if len(m) == 0 {
+		return s
+	}
+
+	return m[1]
+}
+
 func (d *Data) dmm() error {
 	c := colly.NewCollector()
 	var cookies []*http.Cookie
@@ -115,7 +127,7 @@ func (d *Data) dmm() error {
 
 	var performers []string
 	c.OnHTML("td span#performer a", func(e *colly.HTMLElement) {
-		performers = append(performers, strings.TrimSpace(e.Text))
+		performers = append(performers, stripPerformer(e.Text))
 	})
 
 	c.OnHTML("meta[property=og\\:image]", func(e *colly.HTMLElement) {
