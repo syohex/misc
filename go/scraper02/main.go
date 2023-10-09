@@ -31,7 +31,8 @@ var wikiTemplate = `//{{.Date}} {{.ID}}
 [[{{.SmallImage}}>{{.LargeImage}}]]`
 
 var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)$`)
-var labelRegex = regexp.MustCompile(`^([^(（)]+)`)
+var labelRegex = regexp.MustCompile(`^([^(（]+)`)
+var performerRegex = regexp.MustCompile(`^([^(（]+)`)
 
 func makerLabel(maker string, label string) string {
 	if maker == label || strings.Contains(maker, label) {
@@ -63,6 +64,16 @@ func normalizeLabel(label string) string {
 	m := labelRegex.FindStringSubmatch(label)
 	if m == nil {
 		return label
+	}
+
+	return m[1]
+}
+
+func stripPerformer(s string) string {
+	s = strings.TrimSpace(s)
+	m := performerRegex.FindStringSubmatch(s)
+	if len(m) == 0 {
+		return s
 	}
 
 	return m[1]
@@ -116,7 +127,7 @@ func (d *Data) dmm(url string) error {
 	})
 
 	c.OnHTML("td span#performer a", func(e *colly.HTMLElement) {
-		d.Performers = append(d.Performers, strings.TrimSpace(e.Text))
+		d.Performers = append(d.Performers, stripPerformer(e.Text))
 	})
 
 	c.OnHTML("meta[property=og\\:image]", func(e *colly.HTMLElement) {
