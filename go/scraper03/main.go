@@ -41,11 +41,12 @@ type Data struct {
 	SmallImage string
 	LargeImage string
 	Performer  string
+	Note       string
 }
 
-var listTemplate = `|[[{{.ID}}>{{.URL}}]]|[[{{.SmallImage}}>{{.LargeImage}}]]|{{.Title}}|{{.Performer}}|{{.Date}}||`
+var listTemplate = `|[[{{.ID}}>{{.URL}}]]|[[{{.SmallImage}}>{{.LargeImage}}]]|{{.Title}}|{{.Performer}}|{{.Date}}|{{.Note}}|`
 var separator = `|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|`
-var performerRegex = regexp.MustCompile(`^([^(（]+)`)
+var performerRegex = regexp.MustCompile(`^([^(（ ]+)`)
 
 func formatPerformers(ps []string) string {
 	if len(ps) == 0 {
@@ -123,6 +124,17 @@ func (d *Data) dmm() error {
 			return
 		}
 		state = e.Text
+	})
+
+	c.OnHTML("tr td a", func(e *colly.HTMLElement) {
+		if d.Note != "" {
+			return
+		}
+
+		link := e.Attr("href")
+		if strings.Contains(link, "id=6608") || strings.Contains(e.Text, "総集編") {
+			d.Note = "総集編作品"
+		}
 	})
 
 	var performers []string
