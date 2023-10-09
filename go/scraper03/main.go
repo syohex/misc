@@ -189,12 +189,12 @@ func _main() int {
 	}
 
 	if err := baseData.scrape(); err != nil {
-		fmt.Printf("failed to get base data %s", baseData.URL)
+		fmt.Printf("failed to get base data %s\n", baseData.URL)
 		return 1
 	}
 
 	if baseData.LargeImage == "" {
-		fmt.Printf("failed to parse base data %s", baseData.URL)
+		fmt.Printf("failed to parse base data %s\n", baseData.URL)
 		return 1
 	}
 
