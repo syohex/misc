@@ -16,20 +16,23 @@ import (
 )
 
 var start int
-var count int
+var end int
+var zeros int
 var released = true
 
 func init() {
-	var inclusive bool
-	flag.BoolVar(&inclusive, "i", false, "start from zero")
-	flag.IntVar(&count, "c", 10, "print list count")
+	flag.IntVar(&start, "s", -1, "start number")
+	flag.IntVar(&end, "e", -1, "end number")
+	flag.IntVar(&zeros, "z", 3, "end number")
 	flag.Parse()
 
-	if inclusive {
-		start = 0
-		count = count - 1
-	} else {
-		start = 1
+	if start == -1 {
+		fmt.Printf("Missing start and end option\n")
+		os.Exit(1)
+	}
+
+	if end == -1 {
+		end = start
 	}
 }
 
@@ -66,7 +69,7 @@ func toProductID(id string, number int) string {
 }
 
 func idInURL(id string, number int) string {
-	return fmt.Sprintf("%s%03d", strings.ToLower(id), number)
+	return fmt.Sprintf("%s%0*d", strings.ToLower(id), zeros, number)
 }
 
 func (d *Data) scrape() error {
@@ -201,7 +204,7 @@ func _main() int {
 	}
 
 	if err := baseData.scrape(); err != nil {
-		fmt.Printf("failed to get base data %s\n", baseData.URL)
+		fmt.Printf("failed to get base data %s, %v\n", baseData.URL, err)
 		return 1
 	}
 
@@ -211,12 +214,10 @@ func _main() int {
 	}
 
 	var b bytes.Buffer
-	for i := start; i <= count; i++ {
-		num := baseNumber + i
-
+	for i := start; i <= end; i++ {
 		d := &Data{
-			ID:  toProductID(productID, num),
-			URL: generateURL(baseURL, baseID, productID, num),
+			ID:  toProductID(productID, i),
+			URL: generateURL(baseURL, baseID, productID, i),
 		}
 
 		if released {
@@ -227,8 +228,8 @@ func _main() int {
 		}
 
 		if d.LargeImage == "" || d.SmallImage == "" {
-			d.LargeImage = generateImageURL(baseData.LargeImage, baseID, productID, num)
-			d.SmallImage = generateImageURL(baseData.SmallImage, baseID, productID, num)
+			d.LargeImage = generateImageURL(baseData.LargeImage, baseID, productID, i)
+			d.SmallImage = generateImageURL(baseData.SmallImage, baseID, productID, i)
 			d.Performer = "[[ ]]"
 			d.Date = "20--"
 		}
@@ -240,7 +241,7 @@ func _main() int {
 
 		b.WriteRune('\n')
 
-		if num%10 == 0 {
+		if i%10 == 0 {
 			b.WriteString(separator)
 			b.WriteRune('\n')
 		}
