@@ -94,7 +94,7 @@ func (d *Data) dmm(url string) error {
 	}
 
 	c.OnHTML("h1#title", func(e *colly.HTMLElement) {
-		d.Title = e.Text
+		d.Title = strings.TrimSpace(e.Text)
 	})
 
 	state := ""
@@ -103,14 +103,15 @@ func (d *Data) dmm(url string) error {
 			return
 		}
 
+		text := strings.TrimSpace(e.Text)
 		if d.Date == "" && (strings.HasPrefix(state, "発売日") || strings.HasPrefix(state, "商品発売日")) {
-			d.Date = strings.ReplaceAll(strings.TrimSpace(e.Text), "/", ".")
+			d.Date = strings.ReplaceAll(strings.TrimSpace(text), "/", ".")
 			return
 		} else if d.ID == "" && strings.HasPrefix(state, "品番") {
-			d.ID = convertID(e.Text)
+			d.ID = convertID(text)
 			return
 		}
-		state = e.Text
+		state = text
 	})
 
 	c.OnHTML("td a", func(e *colly.HTMLElement) {
@@ -119,10 +120,11 @@ func (d *Data) dmm(url string) error {
 		}
 
 		link := e.Attr("href")
+		text := strings.TrimSpace(e.Text)
 		if strings.Contains(link, "maker") {
-			d.Maker = e.Text
+			d.Maker = text
 		} else if strings.Contains(link, "label") {
-			d.Label = normalizeLabel(e.Text)
+			d.Label = normalizeLabel(text)
 		}
 	})
 
