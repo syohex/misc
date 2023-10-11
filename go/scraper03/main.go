@@ -15,24 +15,25 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
-var start int
-var end int
+var ids []int
 var zeros int
 var released = true
 
 func init() {
+	var start int
+	var end int
+
 	flag.IntVar(&start, "s", -1, "start number")
 	flag.IntVar(&end, "e", -1, "end number")
 	flag.IntVar(&zeros, "z", 3, "end number")
 	flag.Parse()
 
-	if start == -1 {
-		fmt.Printf("Missing start and end option\n")
-		os.Exit(1)
-	}
-
-	if end == -1 {
-		end = start
+	if start != -1 && end == -1 {
+		ids = append(ids, start)
+	} else if start != -1 && end != -1 {
+		for i := start; i <= end; i++ {
+			ids = append(ids, i)
+		}
 	}
 }
 
@@ -113,7 +114,7 @@ func (d *Data) dmm() error {
 	}
 
 	c.OnHTML("h1#title", func(e *colly.HTMLElement) {
-		d.Title = e.Text
+		d.Title = strings.TrimSpace(e.Text)
 	})
 
 	state := ""
@@ -185,6 +186,21 @@ func _main() int {
 	numberStr := args[1]
 	baseURL := args[2]
 
+	for _, s := range args[3:] {
+		id, err := strconv.Atoi(s)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "invalid argument %s\n", s)
+			os.Exit(1)
+		}
+
+		ids = append(ids, id)
+	}
+
+	if len(ids) == 0 {
+		fmt.Fprintf(os.Stderr, "ID is not specified\n")
+		return 1
+	}
+
 	baseNumber, err := strconv.Atoi(numberStr)
 	if err != nil {
 		fmt.Printf("invalid product number %s: %v", numberStr, err)
@@ -214,10 +230,10 @@ func _main() int {
 	}
 
 	var b bytes.Buffer
-	for i := start; i <= end; i++ {
+	for _, id := range ids {
 		d := &Data{
-			ID:  toProductID(productID, i),
-			URL: generateURL(baseURL, baseID, productID, i),
+			ID:  toProductID(productID, id),
+			URL: generateURL(baseURL, baseID, productID, id),
 		}
 
 		if released {
@@ -228,8 +244,8 @@ func _main() int {
 		}
 
 		if d.LargeImage == "" || d.SmallImage == "" {
-			d.LargeImage = generateImageURL(baseData.LargeImage, baseID, productID, i)
-			d.SmallImage = generateImageURL(baseData.SmallImage, baseID, productID, i)
+			d.LargeImage = generateImageURL(baseData.LargeImage, baseID, productID, id)
+			d.SmallImage = generateImageURL(baseData.SmallImage, baseID, productID, id)
 			d.Performer = "[[ ]]"
 			d.Date = "20--"
 		}
@@ -241,7 +257,7 @@ func _main() int {
 
 		b.WriteRune('\n')
 
-		if i%10 == 0 {
+		if id%10 == 0 {
 			b.WriteString(separator)
 			b.WriteRune('\n')
 		}
