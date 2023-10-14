@@ -17,7 +17,6 @@ import (
 
 var ids []int
 var zeros int
-var released = true
 
 func init() {
 	var start int
@@ -66,7 +65,11 @@ func formatPerformers(ps []string) string {
 }
 
 func toProductID(id string, number int) string {
-	return fmt.Sprintf("%s-%03d", strings.ToUpper(id), number)
+	if zeros < 3 {
+		return fmt.Sprintf("%s-%0*d", strings.ToUpper(id), zeros, number)
+	} else {
+		return fmt.Sprintf("%s-%03d", strings.ToUpper(id), number)
+	}
 }
 
 func idInURL(id string, number int) string {
@@ -163,7 +166,6 @@ func (d *Data) dmm() error {
 
 	if err := c.Visit(d.URL); err != nil {
 		if strings.Contains(err.Error(), "Not Found") {
-			released = false
 			return nil
 		}
 
@@ -235,11 +237,9 @@ func _main() int {
 			URL: generateURL(baseURL, baseID, productID, id),
 		}
 
-		if released {
-			if err := d.scrape(); err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-				return 1
-			}
+		if err := d.scrape(); err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			return 1
 		}
 
 		if d.LargeImage == "" || d.SmallImage == "" {
