@@ -135,8 +135,7 @@ func (d *Data) dmm() error {
 			return
 		}
 
-		link := e.Attr("href")
-		if strings.Contains(link, "id=6608") || strings.Contains(e.Text, "総集編") {
+		if strings.Contains(e.Text, "女優ベスト・総集編") || strings.Contains(e.Text, "ベスト・総集編") {
 			d.Note = "総集編作品"
 		}
 	})
