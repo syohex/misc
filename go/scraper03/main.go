@@ -197,15 +197,14 @@ func _main() int {
 		ids = append(ids, id)
 	}
 
-	if len(ids) == 0 {
-		fmt.Fprintf(os.Stderr, "ID is not specified\n")
-		return 1
-	}
-
 	baseNumber, err := strconv.Atoi(numberStr)
 	if err != nil {
 		fmt.Printf("invalid product number %s: %v", numberStr, err)
 		return 1
+	}
+
+	if len(ids) == 0 {
+		ids = append(ids, baseNumber)
 	}
 
 	t, err := template.New("test").Parse(listTemplate)
