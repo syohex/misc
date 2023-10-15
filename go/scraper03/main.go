@@ -17,6 +17,15 @@ import (
 
 var ids []int
 var zeros int
+var withDirector bool
+
+var listTemplate string
+var baseTemplate = `|[[{{.ID}}>{{.URL}}]]|[[{{.SmallImage}}>{{.LargeImage}}]]|{{.Title}}|{{.Performer}}|{{.Date}}|{{.Note}}|`
+var templateWithDirector = `|[[{{.ID}}>{{.URL}}]]|[[{{.SmallImage}}>{{.LargeImage}}]]|{{.Title}}|{{.Performer}}|{{.Director}}|{{.Date}}|{{.Note}}|`
+
+var separator string
+var baseSeparator = `|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|`
+var separatorWithDirector = `|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|`
 
 func init() {
 	var start int
@@ -25,6 +34,7 @@ func init() {
 	flag.IntVar(&start, "s", -1, "start number")
 	flag.IntVar(&end, "e", -1, "end number")
 	flag.IntVar(&zeros, "z", 3, "end number")
+	flag.BoolVar(&withDirector, "d", false, "end number")
 	flag.Parse()
 
 	if start != -1 && end == -1 {
@@ -33,6 +43,14 @@ func init() {
 		for i := start; i <= end; i++ {
 			ids = append(ids, i)
 		}
+	}
+
+	if withDirector {
+		listTemplate = templateWithDirector
+		separator = separatorWithDirector
+	} else {
+		listTemplate = baseTemplate
+		separator = baseSeparator
 	}
 }
 
@@ -44,11 +62,10 @@ type Data struct {
 	SmallImage string
 	LargeImage string
 	Performer  string
+	Director   string
 	Note       string
 }
 
-var listTemplate = `|[[{{.ID}}>{{.URL}}]]|[[{{.SmallImage}}>{{.LargeImage}}]]|{{.Title}}|{{.Performer}}|{{.Date}}|{{.Note}}|`
-var separator = `|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|`
 var performerRegex = regexp.MustCompile(`^([^(（ ]+)`)
 
 func formatPerformers(ps []string) string {
@@ -122,7 +139,7 @@ func (d *Data) dmm() error {
 
 	state := ""
 	c.OnHTML("tr td", func(e *colly.HTMLElement) {
-		if d.Date != "" {
+		if d.Date != "" && d.Director != "" {
 			return
 		}
 
@@ -130,6 +147,12 @@ func (d *Data) dmm() error {
 			d.Date = strings.ReplaceAll(strings.TrimSpace(e.Text), "/", "-")
 			return
 		}
+
+		if d.Director == "" && strings.HasPrefix(state, "監督") {
+			d.Director = strings.TrimSpace(e.Text)
+			return
+		}
+
 		state = e.Text
 	})
 
