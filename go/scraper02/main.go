@@ -74,7 +74,7 @@ func normalizeLabel(label string) string {
 		return label
 	}
 
-	return m[1]
+	return strings.TrimSpace(m[1])
 }
 
 func stripPerformer(s string) string {
@@ -84,7 +84,7 @@ func stripPerformer(s string) string {
 		return s
 	}
 
-	return m[1]
+	return strings.TrimSpace(m[1])
 }
 
 func (d *Data) dmm(url string) error {
