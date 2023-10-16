@@ -33,8 +33,8 @@ func init() {
 
 	flag.IntVar(&start, "s", -1, "start number")
 	flag.IntVar(&end, "e", -1, "end number")
-	flag.IntVar(&zeros, "z", 3, "end number")
-	flag.BoolVar(&withDirector, "d", false, "end number")
+	flag.IntVar(&zeros, "z", 3, "zero padding length")
+	flag.BoolVar(&withDirector, "d", false, "with director column")
 	flag.Parse()
 
 	if start != -1 && end == -1 {
