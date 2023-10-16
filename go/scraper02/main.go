@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,6 +13,13 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/gocolly/colly/v2"
 )
+
+var overrideLabel string
+
+func init() {
+	flag.StringVar(&overrideLabel, "l", "", "label override with given value")
+	flag.Parse()
+}
 
 type Data struct {
 	Title      string
@@ -152,7 +160,8 @@ func (d *Data) dmm(url string) error {
 }
 
 func _main() int {
-	if len(os.Args) < 2 {
+	args := flag.Args()
+	if len(args) == 0 {
 		fmt.Printf("Usage: %s URL\n", os.Args[0])
 		return 1
 	}
@@ -163,7 +172,7 @@ func _main() int {
 		return 1
 	}
 
-	url := os.Args[1]
+	url := args[0]
 	d := &Data{URL: url}
 
 	if strings.Contains(url, "dmm.co.jp") {
@@ -182,6 +191,10 @@ func _main() int {
 		d.Label = d.Maker
 	}
 	d.MakerLabel = makerLabel(d.Maker, d.Label)
+
+	if overrideLabel != "" {
+		d.Label = overrideLabel
+	}
 
 	var b bytes.Buffer
 	if err := t.Execute(&b, d); err != nil {
