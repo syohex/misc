@@ -195,6 +195,10 @@ func (d *Data) dmm() error {
 		return err
 	}
 
+	if d.Director == "----" {
+		d.Director = ""
+	}
+
 	d.Performer = formatPerformers(performers)
 	return nil
 }
