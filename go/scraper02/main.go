@@ -156,7 +156,15 @@ func (d *Data) dmm(url string) error {
 		d.LargeImage = e.Attr("href")
 	})
 
-	return c.Visit(url)
+	if err := c.Visit(url); err != nil {
+		return err
+	}
+
+	if d.SmallImage != "" && d.LargeImage == "" {
+		d.LargeImage = strings.Replace(d.SmallImage, "ps.jpg", "pl.jpg", 1)
+	}
+
+	return nil
 }
 
 func _main() int {

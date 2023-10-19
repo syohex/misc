@@ -195,6 +195,10 @@ func (d *Data) dmm() error {
 		return err
 	}
 
+	if d.SmallImage != "" && d.LargeImage == "" {
+		d.LargeImage = strings.Replace(d.SmallImage, "ps.jpg", "pl.jpg", 1)
+	}
+
 	if d.Director == "----" {
 		d.Director = ""
 	}
