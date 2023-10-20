@@ -56,7 +56,12 @@ func convertID(id string) string {
 		return id
 	}
 
-	return fmt.Sprintf("%s-%s", strings.ToUpper(m[1]), m[2])
+	numPart := m[2]
+	if len(numPart) == 5 && strings.HasPrefix(numPart, "00") {
+		numPart = numPart[2:]
+	}
+
+	return fmt.Sprintf("%s-%s", strings.ToUpper(m[1]), numPart)
 }
 
 func formatPerformers(ps []string) string {
