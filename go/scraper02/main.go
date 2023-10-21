@@ -35,7 +35,7 @@ type Data struct {
 }
 
 var wikiTemplate = `//{{.Date}} {{.ID}}
-[[{{.Title}}（{{.MakerLabel}}）>{{.URL}}]] [[（レーベル一覧）>{{.Label}}]]
+[[{{.Title}}（{{.MakerLabel}}）>{{.URL}}]] [[(レーベル一覧)>{{.Label}}]]
 [[{{.SmallImage}}>{{.LargeImage}}]]`
 
 var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)$`)
