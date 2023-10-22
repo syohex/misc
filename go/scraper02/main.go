@@ -32,11 +32,16 @@ type Data struct {
 	ID         string
 	MakerLabel string
 	Performers []string
+	Size       string
 }
 
 var wikiTemplate = `//{{.Date}} {{.ID}}
 [[{{.Title}}（{{.MakerLabel}}）>{{.URL}}]] [[(レーベル一覧)>{{.Label}}]]
 [[{{.SmallImage}}>{{.LargeImage}}]]`
+
+var videoCTemplate = `//{{.Date}} {{.ID}}
+[[{{.Title}} {{.Size}} （{{.MakerLabel}}）>{{.URL}}]] [[(レーベル一覧)>{{.Label}}]]
+[[&ref({{.SmallImage}},147)>{{.SmallImage}}]]`
 
 var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)$`)
 var labelRegex = regexp.MustCompile(`^([^(（]+)`)
@@ -172,6 +177,82 @@ func (d *Data) dmm(url string) error {
 	return nil
 }
 
+func (d *Data) dmmTypeC(url string) error {
+	c := colly.NewCollector()
+	var cookies []*http.Cookie
+	cookies = append(cookies, &http.Cookie{
+		Name:   "age_check_done",
+		Value:  "1",
+		Path:   "/",
+		Domain: ".dmm.co.jp",
+	})
+
+	if err := c.SetCookies("https://www.dmm.co.jp", cookies); err != nil {
+		return err
+	}
+
+	c.OnHTML("h1#title", func(e *colly.HTMLElement) {
+		d.Title = strings.TrimSpace(e.Text)
+	})
+
+	state := ""
+	c.OnHTML("tr td", func(e *colly.HTMLElement) {
+		if d.Date != "" && d.ID != "" && d.Size != "" {
+			return
+		}
+
+		text := strings.TrimSpace(e.Text)
+		if d.Date == "" && strings.HasPrefix(state, "配信開始日") {
+			d.Date = strings.ReplaceAll(strings.TrimSpace(text), "/", ".")
+			return
+		} else if d.ID == "" && strings.HasPrefix(state, "品番") {
+			d.ID = convertID(text)
+			return
+		} else if d.Size == "" && strings.HasPrefix(state, "サイズ") {
+			d.Size = strings.TrimSpace(e.Text)
+			return
+		}
+
+		state = text
+	})
+
+	c.OnHTML("td a", func(e *colly.HTMLElement) {
+		if d.Maker != "" && d.Label != "" {
+			return
+		}
+
+		link := e.Attr("href")
+		text := strings.TrimSpace(e.Text)
+		if strings.Contains(link, "maker") {
+			d.Maker = text
+		} else if strings.Contains(link, "label") {
+			d.Label = normalizeLabel(text)
+		}
+	})
+
+	c.OnHTML("td span#performer a", func(e *colly.HTMLElement) {
+		d.Performers = append(d.Performers, stripPerformer(e.Text))
+	})
+
+	c.OnHTML("meta[property=og\\:image]", func(e *colly.HTMLElement) {
+		if d.SmallImage != "" {
+			return
+		}
+
+		d.SmallImage = e.Attr("content")
+	})
+
+	c.OnHTML("a[name=package-image]", func(e *colly.HTMLElement) {
+		if d.LargeImage != "" {
+			return
+		}
+
+		d.LargeImage = e.Attr("href")
+	})
+
+	return c.Visit(url)
+}
+
 func _main() int {
 	args := flag.Args()
 	if len(args) == 0 {
@@ -179,17 +260,29 @@ func _main() int {
 		return 1
 	}
 
-	t, err := template.New("test").Parse(wikiTemplate)
+	url := args[0]
+
+	var templateStr string
+	if strings.Contains(url, "dmm.co.jp") && strings.Contains(url, "videoc") {
+		templateStr = videoCTemplate
+	} else {
+		templateStr = wikiTemplate
+	}
+
+	t, err := template.New("test").Parse(templateStr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse template: %v\n", err)
 		return 1
 	}
 
-	url := args[0]
 	d := &Data{URL: url}
 
 	if strings.Contains(url, "dmm.co.jp") {
-		err = d.dmm(url)
+		if strings.Contains(url, "videoc") {
+			err = d.dmmTypeC(url)
+		} else {
+			err = d.dmm(url)
+		}
 	} else {
 		fmt.Fprintf(os.Stderr, "unsupported URL: %s\n", url)
 		return 1
