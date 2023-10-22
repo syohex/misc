@@ -217,7 +217,7 @@ func _main() int {
 
 	output := b.String()
 	if len(d.Performers) > 1 {
-		output += fmt.Sprintf("\n出演者: %s", formatPerformers(d.Performers))
+		output += fmt.Sprintf("\n出演者： %s", formatPerformers(d.Performers))
 	}
 
 	fmt.Println(output)
