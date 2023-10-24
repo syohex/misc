@@ -36,11 +36,11 @@ type Data struct {
 }
 
 var wikiTemplate = `//{{.Date}} {{.ID}}
-[[{{.Title}}（{{.MakerLabel}}）>{{.URL}}]] [[(レーベル一覧)>{{.Label}}]]
+[[{{.Title}}（{{.MakerLabel}}）>{{.URL}}]]　[[(レーベル一覧)>{{.Label}}]]
 [[{{.SmallImage}}>{{.LargeImage}}]]`
 
 var videoCTemplate = `//{{.Date}} {{.ID}}
-[[{{.Title}} {{.Size}} （{{.MakerLabel}}）>{{.URL}}]] [[(レーベル一覧)>{{.Label}}]]
+[[{{.Title}} {{.Size}} （{{.MakerLabel}}）>{{.URL}}]]　[[(レーベル一覧)>{{.Label}}]]
 [[&ref({{.SmallImage}},147)>{{.SmallImage}}]]`
 
 var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)$`)
