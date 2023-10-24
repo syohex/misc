@@ -52,7 +52,7 @@ func makerLabel(maker string, label string) string {
 		return maker
 	}
 
-	return fmt.Sprintf("%s/%s", maker, label)
+	return fmt.Sprintf("%s／%s", maker, label)
 }
 
 func convertID(id string) string {
