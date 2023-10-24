@@ -230,7 +230,7 @@ func _main() int {
 
 	baseNumber, err := strconv.Atoi(numberStr)
 	if err != nil {
-		fmt.Printf("invalid product number %s: %v", numberStr, err)
+		fmt.Printf("invalid product number %s: %v\n", numberStr, err)
 		return 1
 	}
 
