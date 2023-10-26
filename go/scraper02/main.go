@@ -240,6 +240,9 @@ func (d *Data) dmmTypeC(url string) error {
 		}
 
 		d.SmallImage = e.Attr("content")
+		if strings.HasSuffix(d.SmallImage, "pl.jpg") {
+			d.SmallImage = strings.ReplaceAll(d.SmallImage, "pl.jpg", "ps.jpg")
+		}
 	})
 
 	c.OnHTML("a[name=package-image]", func(e *colly.HTMLElement) {
