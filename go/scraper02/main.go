@@ -97,6 +97,14 @@ func stripPerformer(s string) string {
 	return strings.TrimSpace(m[1])
 }
 
+func packageImage(img string) string {
+	if !strings.HasSuffix(img, "pl.jpg") {
+		return img
+	}
+
+	return strings.ReplaceAll(img, "pl.jpg", "ps.jpg")
+}
+
 func (d *Data) dmm(url string) error {
 	c := colly.NewCollector()
 	var cookies []*http.Cookie
@@ -155,7 +163,7 @@ func (d *Data) dmm(url string) error {
 			return
 		}
 
-		d.SmallImage = e.Attr("content")
+		d.SmallImage = packageImage(e.Attr("content"))
 	})
 
 	c.OnHTML("a[name=package-image]", func(e *colly.HTMLElement) {
@@ -239,10 +247,7 @@ func (d *Data) dmmTypeC(url string) error {
 			return
 		}
 
-		d.SmallImage = e.Attr("content")
-		if strings.HasSuffix(d.SmallImage, "pl.jpg") {
-			d.SmallImage = strings.ReplaceAll(d.SmallImage, "pl.jpg", "ps.jpg")
-		}
+		d.SmallImage = packageImage(e.Attr("content"))
 	})
 
 	c.OnHTML("a[name=package-image]", func(e *colly.HTMLElement) {
