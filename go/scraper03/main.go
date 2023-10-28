@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -119,6 +120,14 @@ func stripPerformer(s string) string {
 	return m[1]
 }
 
+func pageImage(s string) string {
+	if !strings.HasSuffix(s, "pl.jpg") {
+		return s
+	}
+
+	return strings.Replace(s, "pl.jpg", "ps.jpg", 1)
+}
+
 func (d *Data) dmm() error {
 	c := colly.NewCollector()
 	var cookies []*http.Cookie
@@ -176,7 +185,7 @@ func (d *Data) dmm() error {
 			return
 		}
 
-		d.SmallImage = e.Attr("content")
+		d.SmallImage = pageImage(e.Attr("content"))
 	})
 
 	c.OnHTML("a[name=package-image]", func(e *colly.HTMLElement) {
@@ -237,6 +246,8 @@ func _main() int {
 	if len(ids) == 0 {
 		ids = append(ids, baseNumber)
 	}
+
+	sort.Ints(ids)
 
 	t, err := template.New("test").Parse(listTemplate)
 	if err != nil {
