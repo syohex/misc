@@ -1,4 +1,4 @@
-module str_join01
+module actgen
 
 go 1.21.1
 

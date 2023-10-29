@@ -1,4 +1,4 @@
-module scraper02
+module wikigen
 
 go 1.21.1
 
