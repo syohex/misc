@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	"flag"
 	"fmt"
 	"net/http"
@@ -15,10 +16,35 @@ import (
 )
 
 var overrideLabel string
+var makerLabelTable map[string]string
 
 func init() {
 	flag.StringVar(&overrideLabel, "l", "", "label override with given value")
 	flag.Parse()
+
+	initMakerTable()
+}
+
+//go:embed maker.list
+var listFile embed.FS
+
+func initMakerTable() {
+	makerLabelTable = make(map[string]string)
+
+	data, err := listFile.ReadFile("maker.list")
+	if err != nil {
+		panic("cannot read maker.list")
+	}
+
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		line := strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		columns := strings.SplitN(line, "\t", 2)
+		makerLabelTable[columns[0]] = columns[1]
+	}
 }
 
 type Data struct {
@@ -47,8 +73,20 @@ var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)$`)
 var labelRegex = regexp.MustCompile(`^([^(（]+)`)
 var performerRegex = regexp.MustCompile(`^([^(（]+)`)
 
+func isSameMeaning(maker string, label string) bool {
+	for k, v := range makerLabelTable {
+		if k == maker && v == label {
+			return true
+		}
+	}
+	return false
+}
+
 func makerLabel(maker string, label string) string {
 	if maker == label || strings.Contains(maker, label) {
+		return maker
+	}
+	if isSameMeaning(maker, label) {
 		return maker
 	}
 
