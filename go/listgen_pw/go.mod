@@ -4,7 +4,7 @@ go 1.21.3
 
 require (
 	github.com/atotto/clipboard v0.1.4
-	github.com/playwright-community/playwright-go v0.3800.1
+	github.com/playwright-community/playwright-go v0.3900.0
 )
 
 require (
