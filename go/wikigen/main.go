@@ -69,7 +69,7 @@ var videoCTemplate = `//{{.Date}} {{.ID}}
 [[{{.Title}} {{.Size}} （{{.MakerLabel}}）>{{.URL}}]]　[[(レーベル一覧)>{{.Label}}]]
 [[&ref({{.SmallImage}},147)>{{.SmallImage}}]]`
 
-var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)(?:so)?$`)
+var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)(?:so|z)?$`)
 var labelRegex = regexp.MustCompile(`^([^(（]+)`)
 var performerRegex = regexp.MustCompile(`^([^(（]+)`)
 
