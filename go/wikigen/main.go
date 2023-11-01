@@ -186,7 +186,7 @@ func (d *Data) dmm(url string) error {
 		link := e.Attr("href")
 		text := strings.TrimSpace(e.Text)
 		if strings.Contains(link, "maker") {
-			d.Maker = text
+			d.Maker = normalizeLabel(text)
 		} else if strings.Contains(link, "label") {
 			d.Label = normalizeLabel(text)
 		}
