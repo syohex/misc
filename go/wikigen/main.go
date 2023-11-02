@@ -17,9 +17,11 @@ import (
 
 var overrideLabel string
 var makerLabelTable map[string]string
+var isSeries = false
 
 func init() {
 	flag.StringVar(&overrideLabel, "l", "", "label override with given value")
+	flag.BoolVar(&isSeries, "s", false, "use series instead of label")
 	flag.Parse()
 
 	initMakerTable()
@@ -59,14 +61,15 @@ type Data struct {
 	MakerLabel string
 	Performers []string
 	Size       string
+	ListName   string
 }
 
 var wikiTemplate = `//{{.Date}} {{.ID}}
-[[{{.Title}}（{{.MakerLabel}}）>{{.URL}}]]　[[(レーベル一覧)>{{.Label}}]]
+[[{{.Title}}（{{.MakerLabel}}）>{{.URL}}]]　[[({{.ListName}}一覧)>{{.Label}}]]
 [[{{.SmallImage}}>{{.LargeImage}}]]`
 
 var videoCTemplate = `//{{.Date}} {{.ID}}
-[[{{.Title}} {{.Size}} （{{.MakerLabel}}）>{{.URL}}]]　[[(レーベル一覧)>{{.Label}}]]
+[[{{.Title}} {{.Size}} （{{.MakerLabel}}）>{{.URL}}]]　[[(.{{ListNAME}}一覧)>{{.Label}}]]
 [[&ref({{.SmallImage}},147)>{{.SmallImage}}]]`
 
 var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)(?:so|z)?$`)
@@ -346,6 +349,12 @@ func _main() int {
 
 	if overrideLabel != "" {
 		d.Label = overrideLabel
+	}
+
+	if isSeries {
+		d.ListName = "シリーズ"
+	} else {
+		d.ListName = "レーベル"
 	}
 
 	var b bytes.Buffer
