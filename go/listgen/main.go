@@ -19,6 +19,7 @@ import (
 var ids []int
 var zeros int
 var withDirector bool
+var noHeader bool
 
 var listTemplate string
 var baseTemplate = `|[[{{.ID}}>{{.URL}}]]|[[{{.SmallImage}}>{{.LargeImage}}]]|{{.Title}}|{{.Performer}}|{{.Date}}|{{.Note}}|`
@@ -36,6 +37,7 @@ func init() {
 	flag.IntVar(&end, "e", -1, "end number")
 	flag.IntVar(&zeros, "z", 3, "zero padding length")
 	flag.BoolVar(&withDirector, "d", false, "with director column")
+	flag.BoolVar(&noHeader, "n", false, "no header")
 	flag.Parse()
 
 	if start != -1 && end == -1 {
@@ -297,7 +299,7 @@ func _main() int {
 
 		b.WriteRune('\n')
 
-		if id%10 == 0 {
+		if id%10 == 0 && !noHeader {
 			b.WriteString(separator)
 			b.WriteRune('\n')
 		}
