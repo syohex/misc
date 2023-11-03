@@ -130,6 +130,17 @@ func pageImage(s string) string {
 	return strings.Replace(s, "pl.jpg", "ps.jpg", 1)
 }
 
+func isDateState(s string) bool {
+	states := []string{"発売日", "商品発売日", "配信開始日"}
+	for _, state := range states {
+		if strings.HasPrefix(s, state) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (d *Data) dmm() error {
 	c := colly.NewCollector()
 	var cookies []*http.Cookie
@@ -154,7 +165,7 @@ func (d *Data) dmm() error {
 			return
 		}
 
-		if d.Date == "" && (strings.HasPrefix(state, "発売日") || strings.HasPrefix(state, "商品発売日")) {
+		if d.Date == "" && isDateState(state) {
 			d.Date = strings.ReplaceAll(strings.TrimSpace(e.Text), "/", "-")
 			return
 		}
@@ -208,6 +219,11 @@ func (d *Data) dmm() error {
 
 	if d.SmallImage != "" && d.LargeImage == "" {
 		d.LargeImage = strings.Replace(d.SmallImage, "ps.jpg", "pl.jpg", 1)
+	}
+
+	// videoc
+	if strings.HasSuffix(d.SmallImage, "jp.jpg") {
+		d.SmallImage = strings.Replace(d.SmallImage, "jp.jpg", "js.jpg", 1)
 	}
 
 	if d.Director == "----" {
