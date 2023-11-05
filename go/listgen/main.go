@@ -67,6 +67,7 @@ type Data struct {
 	Performer  string
 	Director   string
 	Note       string
+	Size       string
 }
 
 var performerRegex = regexp.MustCompile(`^([^(（ ]+)`)
@@ -97,7 +98,9 @@ func idInURL(id string, number int) string {
 }
 
 func (d *Data) scrape() error {
-	if strings.Contains(d.URL, "dmm.co.jp") {
+	if strings.Contains(d.URL, "dmm.co.jp/digital/videoc") {
+		return d.dmmTypeC()
+	} else if strings.Contains(d.URL, "dmm.co.jp") {
 		return d.dmm()
 	}
 
@@ -221,16 +224,67 @@ func (d *Data) dmm() error {
 		d.LargeImage = strings.Replace(d.SmallImage, "ps.jpg", "pl.jpg", 1)
 	}
 
-	// videoc
-	if strings.HasSuffix(d.SmallImage, "jp.jpg") {
-		d.SmallImage = strings.Replace(d.SmallImage, "jp.jpg", "js.jpg", 1)
-	}
-
 	if d.Director == "----" {
 		d.Director = ""
 	}
 
 	d.Performer = formatPerformers(performers)
+	return nil
+}
+
+func (d *Data) dmmTypeC() error {
+	c := colly.NewCollector()
+	var cookies []*http.Cookie
+	cookies = append(cookies, &http.Cookie{
+		Name:   "age_check_done",
+		Value:  "1",
+		Path:   "/",
+		Domain: ".dmm.co.jp",
+	})
+
+	if err := c.SetCookies("https://www.dmm.co.jp", cookies); err != nil {
+		return err
+	}
+
+	state := ""
+	c.OnHTML("tr td", func(e *colly.HTMLElement) {
+		if d.Date != "" && d.Size != "" && d.Title != "" {
+			return
+		}
+
+		text := strings.TrimSpace(e.Text)
+		if d.Date == "" && strings.HasPrefix(state, "配信開始日") {
+			d.Date = strings.ReplaceAll(strings.TrimSpace(text), "/", ".")
+			return
+		} else if d.Size == "" && strings.HasPrefix(state, "サイズ") {
+			d.Size = strings.TrimSpace(e.Text)
+			return
+		} else if d.Title == "" && strings.HasPrefix(state, "名前") {
+			d.Title = strings.TrimSpace(e.Text)
+			return
+		}
+
+		state = text
+	})
+
+	c.OnHTML("meta[property=og\\:image]", func(e *colly.HTMLElement) {
+		if d.SmallImage != "" {
+			return
+		}
+
+		d.SmallImage = e.Attr("content")
+	})
+
+	if err := c.Visit(d.URL); err != nil {
+		return err
+	}
+
+	if strings.HasSuffix(d.SmallImage, "jp.jpg") {
+		d.LargeImage = d.SmallImage
+		d.SmallImage = strings.Replace(d.SmallImage, "jp.jpg", "js.jpg", 1)
+	}
+
+	d.Title = fmt.Sprintf("%s~~%s", d.Title, d.Size)
 	return nil
 }
 
