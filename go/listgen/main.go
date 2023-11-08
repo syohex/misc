@@ -134,7 +134,7 @@ func pageImage(s string) string {
 }
 
 func isDateState(s string) bool {
-	states := []string{"発売日", "商品発売日", "配信開始日"}
+	states := []string{"発売日", "商品発売日"}
 	for _, state := range states {
 		if strings.HasPrefix(s, state) {
 			return true
