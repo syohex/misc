@@ -69,7 +69,7 @@ var wikiTemplate = `//{{.Date}} {{.ID}}
 [[{{.SmallImage}}>{{.LargeImage}}]]`
 
 var videoCTemplate = `//{{.Date}} {{.ID}}
-[[{{.Title}} {{.Size}} （{{.MakerLabel}}）>{{.URL}}]]　[[(.{{ListNAME}}一覧)>{{.Label}}]]
+[[{{.Title}} {{.Size}}>{{.URL}}]]　[[({{.ListName}}一覧)>{{.Label}}]]
 [[&ref({{.SmallImage}},147)>{{.SmallImage}}]]`
 
 var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)(?:so|z)?$`)
