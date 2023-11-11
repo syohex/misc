@@ -240,13 +240,14 @@ func (d *Data) dmmTypeC(url string) error {
 		return err
 	}
 
+	title := ""
 	c.OnHTML("h1#title", func(e *colly.HTMLElement) {
-		d.Title = strings.TrimSpace(e.Text)
+		title = strings.TrimSpace(e.Text)
 	})
 
 	state := ""
 	c.OnHTML("tr td", func(e *colly.HTMLElement) {
-		if d.Date != "" && d.ID != "" && d.Size != "" {
+		if d.Date != "" && d.ID != "" && d.Size != "" && d.Title != "" {
 			return
 		}
 
@@ -259,6 +260,9 @@ func (d *Data) dmmTypeC(url string) error {
 			return
 		} else if d.Size == "" && strings.HasPrefix(state, "サイズ") {
 			d.Size = strings.TrimSpace(e.Text)
+			return
+		} else if d.Title == "" && strings.HasPrefix(state, "名前") {
+			d.Title = strings.TrimSpace(e.Text)
 			return
 		}
 
@@ -280,7 +284,7 @@ func (d *Data) dmmTypeC(url string) error {
 	})
 
 	c.OnHTML("td span#performer a", func(e *colly.HTMLElement) {
-		d.Performers = append(d.Performers, stripPerformer(e.Text))
+		d.Performers = append(d.Performers, e.Text)
 	})
 
 	c.OnHTML("meta[property=og\\:image]", func(e *colly.HTMLElement) {
@@ -301,6 +305,10 @@ func (d *Data) dmmTypeC(url string) error {
 
 	if err := c.Visit(url); err != nil {
 		return err
+	}
+
+	if d.Title == "" && title != "" {
+		d.Title = title
 	}
 
 	if strings.Contains(d.Size, "---") {
