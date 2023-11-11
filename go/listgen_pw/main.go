@@ -19,6 +19,7 @@ import (
 var ids []int
 var zeros int
 var withDirector bool
+var listCount int
 
 var listTemplate string
 var baseTemplate = `|[[{{.ID}}>{{.URL}}]]|[[{{.SmallImage}}>{{.LargeImage}}]]|{{.Title}}|{{.Performer}}|{{.Date}}|{{.Note}}|`
@@ -36,6 +37,7 @@ func init() {
 	flag.IntVar(&end, "e", -1, "end number")
 	flag.IntVar(&zeros, "z", 3, "zero padding length")
 	flag.BoolVar(&withDirector, "d", false, "with director column")
+	flag.IntVar(&listCount, "c", -1, "list count")
 	flag.Parse()
 
 	if start != -1 && end == -1 {
@@ -302,6 +304,12 @@ func _main() int {
 	if err != nil {
 		fmt.Printf("invalid product number %s: %v\n", numberStr, err)
 		return 1
+	}
+
+	if listCount != -1 {
+		for i := 0; i < listCount; i++ {
+			ids = append(ids, baseNumber+i)
+		}
 	}
 
 	if len(ids) == 0 {
