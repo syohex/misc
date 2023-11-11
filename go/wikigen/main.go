@@ -69,7 +69,7 @@ var wikiTemplate = `//{{.Date}} {{.ID}}
 [[{{.SmallImage}}>{{.LargeImage}}]]`
 
 var videoCTemplate = `//{{.Date}} {{.ID}}
-[[{{.Title}} {{.Size}}>{{.URL}}]]　[[({{.ListName}}一覧)>{{.Label}}]]
+[[{{.Title}}{{.Size}}>{{.URL}}]]　[[({{.ListName}}一覧)>{{.Label}}]]
 [[&ref({{.SmallImage}},147)>{{.SmallImage}}]]`
 
 var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)(?:so|z)?$`)
@@ -299,7 +299,21 @@ func (d *Data) dmmTypeC(url string) error {
 		d.LargeImage = e.Attr("href")
 	})
 
-	return c.Visit(url)
+	if err := c.Visit(url); err != nil {
+		return err
+	}
+
+	if strings.Contains(d.Size, "---") {
+		d.Size = ""
+	} else {
+		d.Size = " " + d.Size
+	}
+
+	if d.Label != "" {
+		d.Title = fmt.Sprintf("%s %s", d.Label, d.Title)
+	}
+
+	return nil
 }
 
 func _main() int {
