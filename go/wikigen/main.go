@@ -17,11 +17,13 @@ import (
 
 var overrideLabel string
 var makerLabelTable map[string]string
+var withoutLabelLink bool
 var isSeries = false
 
 func init() {
 	flag.StringVar(&overrideLabel, "l", "", "label override with given value")
 	flag.BoolVar(&isSeries, "s", false, "use series instead of label")
+	flag.BoolVar(&withoutLabelLink, "n", false, "without label link")
 	flag.Parse()
 
 	initMakerTable()
@@ -68,8 +70,16 @@ var wikiTemplate = `//{{.Date}} {{.ID}}
 [[{{.Title}}（{{.MakerLabel}}）>{{.URL}}]]　[[({{.ListName}}一覧)>{{.Label}}]]
 [[{{.SmallImage}}>{{.LargeImage}}]]`
 
+var wikiTemplateWithoutLabel = `//{{.Date}} {{.ID}}
+[[{{.Title}}（{{.MakerLabel}}）>{{.URL}}]]
+[[{{.SmallImage}}>{{.LargeImage}}]]`
+
 var videoCTemplate = `//{{.Date}} {{.ID}}
 [[{{.Title}}{{.Size}}>{{.URL}}]]　[[({{.ListName}}一覧)>{{.Label}}]]
+[[&ref({{.SmallImage}},147)>{{.SmallImage}}]]`
+
+var videoCTemplateWithoutLabel = `//{{.Date}} {{.ID}}
+[[{{.Title}}{{.Size}}>{{.URL}}]]
 [[&ref({{.SmallImage}},147)>{{.SmallImage}}]]`
 
 var idRegex = regexp.MustCompile(`([a-zA-Z]+)(\d+)(?:so|z)?$`)
@@ -335,9 +345,17 @@ func _main() int {
 
 	var templateStr string
 	if strings.Contains(url, "dmm.co.jp") && strings.Contains(url, "videoc") {
-		templateStr = videoCTemplate
+		if withoutLabelLink {
+			templateStr = videoCTemplateWithoutLabel
+		} else {
+			templateStr = videoCTemplate
+		}
 	} else {
-		templateStr = wikiTemplate
+		if withoutLabelLink {
+			templateStr = wikiTemplateWithoutLabel
+		} else {
+			templateStr = wikiTemplate
+		}
 	}
 
 	t, err := template.New("test").Parse(templateStr)
