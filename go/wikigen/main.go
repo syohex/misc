@@ -198,9 +198,9 @@ func (d *Data) dmm(url string) error {
 
 		link := e.Attr("href")
 		text := strings.TrimSpace(e.Text)
-		if strings.Contains(link, "=maker") {
+		if strings.Contains(link, "=maker") || strings.Contains(link, "maker=") {
 			d.Maker = normalizeLabel(text)
-		} else if strings.Contains(link, "=label") {
+		} else if strings.Contains(link, "=label") || strings.Contains(link, "maker=") {
 			d.Label = normalizeLabel(text)
 		}
 	})
@@ -286,9 +286,9 @@ func (d *Data) dmmTypeC(url string) error {
 
 		link := e.Attr("href")
 		text := strings.TrimSpace(e.Text)
-		if strings.Contains(link, "maker") {
+		if strings.Contains(link, "=maker") || strings.Contains(link, "maker=") {
 			d.Maker = text
-		} else if strings.Contains(link, "label") {
+		} else if strings.Contains(link, "label=") || strings.Contains(link, "label=") {
 			d.Label = normalizeLabel(text)
 		}
 	})
