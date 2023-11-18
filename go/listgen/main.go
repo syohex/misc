@@ -234,6 +234,17 @@ func (d *Data) dmm() error {
 	return nil
 }
 
+var agePartRe = regexp.MustCompile(`\([0-9]+\)`)
+
+func combineTitleAndName(name string, title string) string {
+	m := agePartRe.FindStringSubmatch(name)
+	if len(m) == 0 {
+		return name
+	}
+
+	return title + m[0]
+}
+
 func (d *Data) dmmTypeC() error {
 	c := colly.NewCollector()
 	var cookies []*http.Cookie
@@ -248,9 +259,15 @@ func (d *Data) dmmTypeC() error {
 		return err
 	}
 
+	title := ""
+	c.OnHTML("h1#title", func(e *colly.HTMLElement) {
+		title = strings.TrimSpace(e.Text)
+	})
+
 	state := ""
+	name := ""
 	c.OnHTML("tr td", func(e *colly.HTMLElement) {
-		if d.Date != "" && d.Size != "" && d.Title != "" {
+		if d.Date != "" && d.Size != "" && name != "" {
 			return
 		}
 
@@ -261,8 +278,8 @@ func (d *Data) dmmTypeC() error {
 		} else if d.Size == "" && strings.HasPrefix(state, "サイズ") {
 			d.Size = strings.TrimSpace(e.Text)
 			return
-		} else if d.Title == "" && strings.HasPrefix(state, "名前") {
-			d.Title = strings.TrimSpace(e.Text)
+		} else if name == "" && strings.HasPrefix(state, "名前") {
+			name = strings.TrimSpace(e.Text)
 			return
 		}
 
@@ -279,6 +296,14 @@ func (d *Data) dmmTypeC() error {
 
 	if err := c.Visit(d.URL); err != nil {
 		return err
+	}
+
+	if name != "" && title != "" {
+		d.Title = combineTitleAndName(name, title)
+	} else if name != "" {
+		d.Title = name
+	} else {
+		d.Title = title
 	}
 
 	if strings.HasSuffix(d.SmallImage, "jp.jpg") {
