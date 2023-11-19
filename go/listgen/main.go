@@ -295,6 +295,9 @@ func (d *Data) dmmTypeC() error {
 	})
 
 	if err := c.Visit(d.URL); err != nil {
+		if strings.Contains(err.Error(), "Not Found") {
+			return nil
+		}
 		return err
 	}
 
