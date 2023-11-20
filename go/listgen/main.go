@@ -273,7 +273,7 @@ func (d *Data) dmmTypeC() error {
 
 		text := strings.TrimSpace(e.Text)
 		if d.Date == "" && strings.HasPrefix(state, "配信開始日") {
-			d.Date = strings.ReplaceAll(strings.TrimSpace(text), "/", ".")
+			d.Date = strings.ReplaceAll(strings.TrimSpace(text), "/", "-")
 			return
 		} else if d.Size == "" && strings.HasPrefix(state, "サイズ") {
 			d.Size = strings.TrimSpace(e.Text)
