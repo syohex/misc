@@ -241,7 +241,7 @@ var agePartRe = regexp.MustCompile(`\([0-9]+\)`)
 func combineTitleAndName(name string, title string) string {
 	m := agePartRe.FindStringSubmatch(name)
 	if len(m) == 0 {
-		return name
+		return title
 	}
 
 	return title + m[0]
