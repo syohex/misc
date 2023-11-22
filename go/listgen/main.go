@@ -239,7 +239,7 @@ var agePartRe = regexp.MustCompile(`\([0-9]+\)`)
 func combineTitleAndName(name string, title string) string {
 	m := agePartRe.FindStringSubmatch(name)
 	if len(m) == 0 {
-		return name
+		return title
 	}
 
 	return title + m[0]
@@ -314,7 +314,10 @@ func (d *Data) dmmTypeC() error {
 		d.SmallImage = strings.Replace(d.SmallImage, "jp.jpg", "js.jpg", 1)
 	}
 
-	d.Title = fmt.Sprintf("%s~~%s", d.Title, d.Size)
+	if !strings.Contains(d.Size, "T---") {
+		d.Title = fmt.Sprintf("%s~~%s", d.Title, d.Size)
+	}
+
 	return nil
 }
 
