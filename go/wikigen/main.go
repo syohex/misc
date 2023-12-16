@@ -200,7 +200,7 @@ func (d *Data) dmm(url string) error {
 		text := strings.TrimSpace(e.Text)
 		if strings.Contains(link, "=maker") || strings.Contains(link, "maker=") {
 			d.Maker = normalizeLabel(text)
-		} else if strings.Contains(link, "=label") || strings.Contains(link, "maker=") {
+		} else if strings.Contains(link, "=label") || strings.Contains(link, "label=") {
 			d.Label = normalizeLabel(text)
 		}
 	})
