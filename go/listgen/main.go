@@ -206,14 +206,6 @@ func (d *Data) dmm() error {
 		d.SmallImage = pageImage(e.Attr("content"))
 	})
 
-	c.OnHTML("a[name=package-image]", func(e *colly.HTMLElement) {
-		if d.LargeImage != "" {
-			return
-		}
-
-		d.LargeImage = e.Attr("href")
-	})
-
 	if err := c.Visit(d.URL); err != nil {
 		if strings.Contains(err.Error(), "Not Found") {
 			return nil
