@@ -191,7 +191,7 @@ func (d *Data) dmm(url string) error {
 		state = text
 	})
 
-	c.OnHTML("td a", func(e *colly.HTMLElement) {
+	c.OnHTML("td > a", func(e *colly.HTMLElement) {
 		if d.Maker != "" && d.Label != "" {
 			return
 		}
