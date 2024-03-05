@@ -19,16 +19,22 @@ import (
 var ids []int
 var zeros int
 var withDirector bool
+var withMaker bool
+var withLabel bool
 var noHeader bool
 var listCount int
 
 var listTemplate string
 var baseTemplate = `|[[{{.ID}}>{{.URL}}]]|[[{{.SmallImage}}>{{.LargeImage}}]]|{{.Title}}|{{.Performer}}|{{.Date}}|{{.Note}}|`
 var templateWithDirector = `|[[{{.ID}}>{{.URL}}]]|[[{{.SmallImage}}>{{.LargeImage}}]]|{{.Title}}|{{.Performer}}|{{.Director}}|{{.Date}}|{{.Note}}|`
+var templateWithMaker = `|[[{{.ID}}>{{.URL}}]]|[[{{.SmallImage}}>{{.LargeImage}}]]|{{.Title}}|{{.Performer}}|{{.Maker}}|{{.Date}}|{{.Note}}|`
+var templateWithLabel = `|[[{{.ID}}>{{.URL}}]]|[[{{.SmallImage}}>{{.LargeImage}}]]|{{.Title}}|{{.Performer}}|{{.Label}}|{{.Date}}|{{.Note}}|`
 
 var separator string
 var baseSeparator = `|~NO|PHOTO|TITLE|ACTRESS|RELEASE|NOTE|`
 var separatorWithDirector = `|~NO|PHOTO|TITLE|ACTRESS|DIRECTOR|RELEASE|NOTE|`
+var separatorWithMaker = `|~NO|PHOTO|TITLE|ACTRESS|MAKER|RELEASE|NOTE|`
+var separatorWithLabel = `|~NO|PHOTO|TITLE|ACTRESS|LABEL|RELEASE|NOTE|`
 
 func init() {
 	var start int
@@ -38,6 +44,8 @@ func init() {
 	flag.IntVar(&end, "e", -1, "end number")
 	flag.IntVar(&zeros, "z", 3, "zero padding length")
 	flag.BoolVar(&withDirector, "d", false, "with director column")
+	flag.BoolVar(&withMaker, "m", false, "with maker column")
+	flag.BoolVar(&withLabel, "l", false, "with label column")
 	flag.BoolVar(&noHeader, "n", false, "no header")
 	flag.IntVar(&listCount, "c", -1, "list count")
 	flag.Parse()
@@ -53,6 +61,12 @@ func init() {
 	if withDirector {
 		listTemplate = templateWithDirector
 		separator = separatorWithDirector
+	} else if withMaker {
+		listTemplate = templateWithMaker
+		separator = separatorWithMaker
+	} else if withLabel {
+		listTemplate = templateWithLabel
+		separator = separatorWithLabel
 	} else {
 		listTemplate = baseTemplate
 		separator = baseSeparator
@@ -70,6 +84,8 @@ type Data struct {
 	Director   string
 	Note       string
 	Size       string
+	Maker      string
+	Label      string
 }
 
 var performerRegex = regexp.MustCompile(`^([^(（ ]+)`)
@@ -146,6 +162,17 @@ func isDateState(s string) bool {
 	return false
 }
 
+var labelRegex = regexp.MustCompile(`^([^(（]+)`)
+
+func normalizeLabel(label string) string {
+	m := labelRegex.FindStringSubmatch(label)
+	if m == nil {
+		return label
+	}
+
+	return strings.TrimSpace(m[1])
+}
+
 func (d *Data) dmm() error {
 	c := colly.NewCollector()
 	var cookies []*http.Cookie
@@ -181,6 +208,20 @@ func (d *Data) dmm() error {
 		}
 
 		state = e.Text
+	})
+
+	c.OnHTML("td > a", func(e *colly.HTMLElement) {
+		if d.Maker != "" && d.Label != "" {
+			return
+		}
+
+		link := e.Attr("href")
+		text := strings.TrimSpace(e.Text)
+		if strings.Contains(link, "=maker") || strings.Contains(link, "maker=") {
+			d.Maker = normalizeLabel(text)
+		} else if strings.Contains(link, "=label") || strings.Contains(link, "label=") {
+			d.Label = normalizeLabel(text)
+		}
 	})
 
 	c.OnHTML("tr td a", func(e *colly.HTMLElement) {
