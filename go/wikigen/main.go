@@ -114,9 +114,11 @@ func convertID(id string) string {
 
 	charPart := m[1]
 	numPart := m[2]
-	if len(numPart) == 5 {
+	if len(numPart) == 5 { // e.g. 00123
 		numPart = strings.TrimPrefix(numPart, "00")
-		numPart = strings.TrimPrefix(numPart, "0")
+		if len(numPart) == 5 { // e.g 01234
+			numPart = strings.TrimPrefix(numPart, "0")
+		}
 	}
 
 	if charPart == "dsvr" {
