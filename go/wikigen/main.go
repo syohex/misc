@@ -112,12 +112,18 @@ func convertID(id string) string {
 		return id
 	}
 
+	charPart := m[1]
 	numPart := m[2]
-	if len(numPart) == 5 && strings.HasPrefix(numPart, "00") {
-		numPart = numPart[2:]
+	if len(numPart) == 5 {
+		numPart = strings.TrimPrefix(numPart, "00")
+		numPart = strings.TrimPrefix(numPart, "0")
 	}
 
-	return fmt.Sprintf("%s-%s", strings.ToUpper(m[1]), numPart)
+	if charPart == "dsvr" {
+		charPart = "3dsvr"
+	}
+
+	return fmt.Sprintf("%s-%s", strings.ToUpper(charPart), numPart)
 }
 
 func formatPerformers(ps []string) string {
@@ -292,7 +298,7 @@ func (d *Data) dmmTypeC(url string) error {
 		text := strings.TrimSpace(e.Text)
 		if strings.Contains(link, "=maker") || strings.Contains(link, "maker=") {
 			d.Maker = text
-		} else if strings.Contains(link, "label=") || strings.Contains(link, "label=") {
+		} else if strings.Contains(link, "label=") || strings.Contains(link, "maker=") {
 			d.Label = normalizeLabel(text)
 		}
 	})
