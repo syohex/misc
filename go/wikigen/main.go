@@ -164,6 +164,8 @@ func packageImage(img string) string {
 	return strings.ReplaceAll(img, "pl.jpg", "ps.jpg")
 }
 
+var titleReplacer = strings.NewReplacer("@", "＠")
+
 func (d *Data) dmm(url string) error {
 	c := colly.NewCollector()
 	var cookies []*http.Cookie
@@ -179,7 +181,7 @@ func (d *Data) dmm(url string) error {
 	}
 
 	c.OnHTML("h1#title", func(e *colly.HTMLElement) {
-		d.Title = strings.TrimSpace(e.Text)
+		d.Title = titleReplacer.Replace(strings.TrimSpace(e.Text))
 	})
 
 	state := ""
@@ -336,6 +338,7 @@ func (d *Data) dmmTypeC(url string) error {
 	} else {
 		d.Title = title
 	}
+	d.Title = titleReplacer.Replace(d.Title)
 
 	if strings.Contains(d.Size, "---") {
 		d.Size = ""
