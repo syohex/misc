@@ -173,6 +173,8 @@ func normalizeLabel(label string) string {
 	return strings.TrimSpace(m[1])
 }
 
+var titleReplacer = strings.NewReplacer("@", "＠")
+
 func (d *Data) dmm() error {
 	c := colly.NewCollector()
 	var cookies []*http.Cookie
@@ -188,7 +190,7 @@ func (d *Data) dmm() error {
 	}
 
 	c.OnHTML("h1#title", func(e *colly.HTMLElement) {
-		d.Title = strings.TrimSpace(e.Text)
+		d.Title = titleReplacer.Replace(strings.TrimSpace(e.Text))
 	})
 
 	state := ""
@@ -294,7 +296,7 @@ func (d *Data) dmmTypeC() error {
 
 	title := ""
 	c.OnHTML("h1#title", func(e *colly.HTMLElement) {
-		title = strings.TrimSpace(e.Text)
+		title = titleReplacer.Replace(strings.TrimSpace(e.Text))
 	})
 
 	state := ""
