@@ -173,6 +173,17 @@ func normalizeLabel(label string) string {
 	return strings.TrimSpace(m[1])
 }
 
+var dandyRegex = regexp.MustCompile(`1dandy(\d+)`)
+
+func extractDandyID(url string) string {
+	m := dandyRegex.FindStringSubmatch(url)
+	if m == nil {
+		return ""
+	}
+
+	return strings.TrimSpace(m[1])
+}
+
 var titleReplacer = strings.NewReplacer("@", "＠")
 
 func (d *Data) dmm() error {
@@ -259,6 +270,13 @@ func (d *Data) dmm() error {
 
 	if d.SmallImage != "" && d.LargeImage == "" {
 		d.LargeImage = strings.Replace(d.SmallImage, "ps.jpg", "pl.jpg", 1)
+	}
+
+	if strings.Contains(d.URL, "1dandy") {
+		if id := extractDandyID(d.URL); id != "" {
+			tmpl := "https://pics.dmm.co.jp/digital/video/1dandy###/1dandy###jp-1.jpg"
+			d.LargeImage = strings.ReplaceAll(tmpl, "###", id)
+		}
 	}
 
 	if d.Director == "----" {
