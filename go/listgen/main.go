@@ -18,6 +18,7 @@ import (
 
 var ids []int
 var zeros int
+var zeroFlag *int
 var withDirector bool
 var withMaker bool
 var withLabel bool
@@ -42,13 +43,17 @@ func init() {
 
 	flag.IntVar(&start, "s", -1, "start number")
 	flag.IntVar(&end, "e", -1, "end number")
-	flag.IntVar(&zeros, "z", 3, "zero padding length")
+	zeroFlag = flag.Int("z", 3, "zero padding length")
 	flag.BoolVar(&withDirector, "d", false, "with director column")
 	flag.BoolVar(&withMaker, "m", false, "with maker column")
 	flag.BoolVar(&withLabel, "l", false, "with label column")
 	flag.BoolVar(&noHeader, "n", false, "no header")
 	flag.IntVar(&listCount, "c", -1, "list count")
 	flag.Parse()
+
+	if zeroFlag != nil {
+		zeros = *zeroFlag
+	}
 
 	if start != -1 && end == -1 {
 		ids = append(ids, start)
@@ -393,6 +398,10 @@ func _main() int {
 		}
 
 		ids = append(ids, id)
+	}
+
+	if zeroFlag != nil && strings.Contains(baseURL, "/videoa/") {
+		zeros = 5
 	}
 
 	baseNumber, err := strconv.Atoi(numberStr)
