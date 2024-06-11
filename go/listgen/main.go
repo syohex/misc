@@ -93,7 +93,7 @@ type Data struct {
 	Label      string
 }
 
-var performerRegex = regexp.MustCompile(`^([^(（ ]+)`)
+var performerRegex = regexp.MustCompile(`^([^(（]+)`)
 
 func formatPerformers(ps []string) string {
 	if len(ps) == 0 {
