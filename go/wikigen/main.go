@@ -123,7 +123,7 @@ func convertID(id string) string {
 		numPart = strings.TrimPrefix(numPart, "0")
 	}
 
-	if charPart == "dsvr" {
+	if charPart == "dsvr" && !strings.HasPrefix(id, "dsvr") {
 		charPart = "3dsvr"
 	}
 
