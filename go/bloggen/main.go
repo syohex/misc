@@ -186,7 +186,7 @@ func (d *Data) mgs() error {
 }
 
 func stripQueryString(urlStr string) (string, error) {
-	url, err := url.Parse(os.Args[1])
+	url, err := url.Parse(urlStr)
 	if err != nil {
 		return "", err
 	}
