@@ -379,6 +379,10 @@ func (d *Data) dmmTypeC() error {
 	return nil
 }
 
+func validateArgument(productID, numberStr, baseURL string) bool {
+	return strings.Contains(baseURL, productID) && strings.Contains(baseURL, numberStr)
+}
+
 func _main() int {
 	args := flag.Args()
 	if len(args) < 3 {
@@ -389,6 +393,11 @@ func _main() int {
 	productID := args[0]
 	numberStr := args[1]
 	baseURL := args[2]
+
+	if !validateArgument(productID, numberStr, baseURL) {
+		fmt.Fprintf(os.Stderr, "'%s' does not contain '%s' or '%s'\n", baseURL, productID, numberStr)
+		return 1
+	}
 
 	for _, s := range args[3:] {
 		id, err := strconv.Atoi(s)
