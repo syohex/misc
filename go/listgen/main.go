@@ -145,7 +145,7 @@ func stripPerformer(s string) string {
 		return s
 	}
 
-	return m[1]
+	return strings.TrimSpace(m[1])
 }
 
 func pageImage(s string) string {
