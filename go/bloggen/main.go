@@ -112,6 +112,18 @@ func (d *Data) dmm() error {
 func (d *Data) sokmil() error {
 	c := colly.NewCollector()
 
+	var cookies []*http.Cookie
+	cookies = append(cookies, &http.Cookie{
+		Name:   "AGEAUTH",
+		Value:  "ok",
+		Path:   "/",
+		Domain: ".sokmil.com",
+	})
+
+	if err := c.SetCookies("https://www.sokmil.com", cookies); err != nil {
+		return err
+	}
+
 	c.OnHTML("a.sokmil-lightbox-jacket", func(e *colly.HTMLElement) {
 		if d.Image == "" {
 			d.Image = e.Attr("href")
@@ -134,7 +146,6 @@ func (d *Data) sokmil() error {
 
 	u.RawQuery = q.Encode()
 	d.URL = u.String()
-
 	return c.Visit(d.URL)
 }
 
