@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -13,6 +14,10 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/gocolly/colly/v2"
+)
+
+const (
+	userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
 )
 
 var htmlTemplate = `
@@ -110,7 +115,14 @@ func (d *Data) dmm() error {
 }
 
 func (d *Data) sokmil() error {
-	c := colly.NewCollector()
+	c := colly.NewCollector(
+		colly.UserAgent(userAgent),
+	)
+	c.WithTransport(&http.Transport{
+		TLSClientConfig: &tls.Config{
+			MinVersion: tls.VersionTLS13,
+		},
+	})
 
 	var cookies []*http.Cookie
 	cookies = append(cookies, &http.Cookie{
