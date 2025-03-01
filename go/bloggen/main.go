@@ -77,10 +77,10 @@ func (d *Data) dmm() error {
 	}
 
 	// video a
-	c.OnHTML("a[target]", func(e *colly.HTMLElement) {
-		target := e.Attr("target")
-		if d.Image == "" && target == "_package" {
-			d.Image = e.Attr("href")
+	c.OnHTML("img[src]", func(e *colly.HTMLElement) {
+		src := e.Attr("src")
+		if d.Image == "" && strings.HasSuffix(src, "pl.jpg") {
+			d.Image = src
 		}
 	})
 	// mono
