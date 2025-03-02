@@ -1,4 +1,4 @@
-module wikigen
+module oldwikigen
 
 go 1.21.1
 
