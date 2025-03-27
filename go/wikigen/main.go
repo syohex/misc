@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -24,12 +23,12 @@ const (
 )
 
 type Config struct {
-	Dmm    AffiliateInfo `json:"dmm"`
-	Sokmil AffiliateInfo `json:"sokmil"`
+	Dmm    AffiliateInfo `yaml:"dmm"`
+	Sokmil AffiliateInfo `yaml:"sokmil"`
 }
 
 type AffiliateInfo struct {
-	Id string `json:"id"`
+	Id string `yaml:"id"`
 }
 
 func readConfig() (*Config, error) {
@@ -38,14 +37,14 @@ func readConfig() (*Config, error) {
 		return nil, err
 	}
 
-	configFile := filepath.Join(dir, ".config", "blog", "config.json")
-	file, err := os.Open(configFile)
+	configFile := filepath.Join(dir, ".config", "blog", "config.yaml")
+	bs, err := os.ReadFile(configFile)
 	if err != nil {
 		return nil, err
 	}
 
 	conf := &Config{}
-	err = json.NewDecoder(file).Decode(conf)
+	err = yaml.Unmarshal(bs, conf)
 	return conf, err
 }
 
