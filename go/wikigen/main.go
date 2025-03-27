@@ -47,10 +47,6 @@ func readConfig() (*Config, error) {
 	return conf, err
 }
 
-type InputData struct {
-	Products []ProductMetaData
-}
-
 type ProductMetaData struct {
 	ID        string   `yaml:"id"`
 	Title     string   `yaml:"title"`
@@ -60,7 +56,7 @@ type ProductMetaData struct {
 	Note      string   `yaml:"note"`
 }
 
-type ProductData struct {
+type Product struct {
 	ID         string
 	Title      string
 	Date       string
@@ -70,7 +66,7 @@ type ProductData struct {
 	Actresses  []string
 }
 
-func (d *ProductData) scrape(productURL string) error {
+func (d *Product) scrape(productURL string) error {
 	if strings.Contains(productURL, "www.sokmil.com") {
 		return d.sokmil(productURL)
 	} else if strings.Contains(productURL, "dmm.co.jp") {
@@ -105,7 +101,7 @@ func formatDate(dateStr string) string {
 	return strings.ReplaceAll(strings.TrimSpace(dateStr), "/", "-")
 }
 
-func (d *ProductData) dmm(productURL string) error {
+func (d *Product) dmm(productURL string) error {
 	c := colly.NewCollector()
 	var cookies []*http.Cookie
 	cookies = append(cookies, &http.Cookie{
@@ -156,7 +152,7 @@ func (d *ProductData) dmm(productURL string) error {
 	return nil
 }
 
-func (d *ProductData) sokmil(productURL string) error {
+func (d *Product) sokmil(productURL string) error {
 	c := colly.NewCollector(
 		colly.UserAgent(userAgent),
 	)
@@ -231,7 +227,7 @@ func dmmAffiliateURL(productURL string, config *Config) (string, error) {
 	return u.String(), nil
 }
 
-func (d *ProductData) String(url1 string, url2 string, config *Config) (string, error) {
+func (d *Product) String(url1 string, url2 string, config *Config) (string, error) {
 	sokmilAff, err := sokmilAffiliateURL(url1, config)
 	if err != nil {
 		return "", err
@@ -279,6 +275,20 @@ func (d *ProductData) String(url1 string, url2 string, config *Config) (string, 
 	return output, nil
 }
 
+func matchID(productID string, ids []string) bool {
+	if len(ids) == 0 {
+		return true
+	}
+
+	for _, id := range ids {
+		if productID == id {
+			return true
+		}
+	}
+
+	return false
+}
+
 func _main() int {
 	if len(os.Args) < 2 {
 		fmt.Printf("Usage: %s data.yaml\n", os.Args[0])
@@ -290,6 +300,13 @@ func _main() int {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to read input yaml file: %v\n", err)
 		return 1
+	}
+
+	var filterIDs []string
+	if len(os.Args) > 2 {
+		for _, id := range os.Args[2:] {
+			filterIDs = append(filterIDs, strings.ToUpper(id))
+		}
 	}
 
 	var wiki []ProductMetaData
@@ -305,13 +322,19 @@ func _main() int {
 	}
 
 	var sb strings.Builder
-	sb.WriteString(tableHeader)
-	sb.WriteRune('\n')
+	if len(filterIDs) == 0 {
+		sb.WriteString(tableHeader)
+		sb.WriteRune('\n')
+	}
 
 	for _, product := range wiki {
-		pd := &ProductData{
+		pd := &Product{
 			ID:        product.ID,
 			Actresses: product.Actresses,
+		}
+
+		if !matchID(pd.ID, filterIDs) {
+			continue
 		}
 
 		if err := pd.scrape(product.SokmilURL); err != nil {
