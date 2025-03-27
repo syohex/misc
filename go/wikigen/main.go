@@ -16,9 +16,11 @@ import (
 )
 
 const (
-	userAgent        = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
-	tableHeader      = "|~ID|Image|タイトル|出演者(出演順)|発売日|Note|"
-	actressSeparator = "／"
+	userAgent           = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+	tableHeader         = "|~ID|Image|タイトル|出演者(出演順)|発売日|Note|"
+	actressSeparator    = "／"
+	wikiNewLine         = "~~"
+	wikiColumnSeparator = '|'
 )
 
 type Config struct {
@@ -47,7 +49,7 @@ func readConfig() (*Config, error) {
 	return conf, err
 }
 
-type ProductMetaData struct {
+type ProductData struct {
 	ID        string   `yaml:"id"`
 	Title     string   `yaml:"title"`
 	SokmilURL string   `yaml:"sokmil"`
@@ -64,6 +66,7 @@ type Product struct {
 	LargeImage string
 	Config     Config
 	Actresses  []string
+	Note       string
 }
 
 func (d *Product) scrape(productURL string) error {
@@ -237,23 +240,24 @@ func (d *Product) String(url1 string, url2 string, config *Config) (string, erro
 		return "", err
 	}
 
-	output := ""
+	var sb strings.Builder
+
 	// id part
-	output += "|"
-	output += fmt.Sprintf("[[%s>%s]]", d.ID, dmmAff)
+	sb.WriteRune(wikiColumnSeparator)
+	sb.WriteString(fmt.Sprintf("[[%s>%s]]", d.ID, dmmAff))
 
 	// image part
-	output += "|"
-	output += fmt.Sprintf("center:[[&ref(%s,180)>%s]]", d.SmallImage, d.LargeImage)
-	output += "~~"
-	output += fmt.Sprintf("[[ソクミル>%s]] [[FANZA>%s]]", sokmilAff, dmmAff)
+	sb.WriteRune(wikiColumnSeparator)
+	sb.WriteString(fmt.Sprintf("center:[[&ref(%s,180)>%s]]", d.SmallImage, d.LargeImage))
+	sb.WriteString(wikiNewLine)
+	sb.WriteString(fmt.Sprintf("[[ソクミル>%s]] [[FANZA>%s]]", sokmilAff, dmmAff))
 
 	// title part
-	output += "|"
-	output += d.Title
+	sb.WriteRune(wikiColumnSeparator)
+	sb.WriteString(d.Title)
 
 	// performer part
-	output += "|"
+	sb.WriteRune(wikiColumnSeparator)
 
 	var actStrs []string
 	for _, actress := range d.Actresses {
@@ -263,16 +267,18 @@ func (d *Product) String(url1 string, url2 string, config *Config) (string, erro
 			actStrs = append(actStrs, fmt.Sprintf("[[%s]]", actress))
 		}
 	}
-	output += strings.Join(actStrs, actressSeparator)
+	sb.WriteString(strings.Join(actStrs, actressSeparator))
 
-	// date part
-	output += "|"
-	output += d.Date
+	// release date part
+	sb.WriteRune(wikiColumnSeparator)
+	sb.WriteString(d.Date)
 
-	// end part
-	output += "||"
+	// note part
+	sb.WriteRune(wikiColumnSeparator)
+	sb.WriteString(d.Note)
+	sb.WriteRune(wikiColumnSeparator)
 
-	return output, nil
+	return sb.String(), nil
 }
 
 func matchID(productID string, ids []string) bool {
@@ -309,8 +315,8 @@ func _main() int {
 		}
 	}
 
-	var wiki []ProductMetaData
-	if err := yaml.Unmarshal(c, &wiki); err != nil {
+	var productData []ProductData
+	if err := yaml.Unmarshal(c, &productData); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse input yaml file(%s): %v\n", inputFile, err)
 		return 1
 	}
@@ -327,10 +333,11 @@ func _main() int {
 		sb.WriteRune('\n')
 	}
 
-	for _, product := range wiki {
+	for _, product := range productData {
 		pd := &Product{
 			ID:        product.ID,
 			Actresses: product.Actresses,
+			Note:      product.Note,
 		}
 
 		if !matchID(pd.ID, filterIDs) {
