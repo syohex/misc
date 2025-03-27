@@ -11,11 +11,14 @@ import (
 	"strings"
 
 	"github.com/atotto/clipboard"
+	"github.com/goccy/go-yaml"
 	"github.com/gocolly/colly/v2"
 )
 
 const (
-	userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+	userAgent        = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+	tableHeader      = "|~ID|Image|タイトル|出演者(出演順)|発売日|Note|"
+	actressSeparator = "／"
 )
 
 type Config struct {
@@ -44,16 +47,30 @@ func readConfig() (*Config, error) {
 	return conf, err
 }
 
-type Data struct {
+type InputData struct {
+	Products []ProductMetaData
+}
+
+type ProductMetaData struct {
+	ID        string   `yaml:"id"`
+	Title     string   `yaml:"title"`
+	SokmilURL string   `yaml:"sokmil"`
+	FanzaURL  string   `yaml:"fanza"`
+	Actresses []string `yaml:"actresses"`
+	Note      string   `yaml:"note"`
+}
+
+type ProductData struct {
 	ID         string
 	Title      string
 	Date       string
 	SmallImage string
 	LargeImage string
 	Config     Config
+	Actresses  []string
 }
 
-func (d *Data) scrape(productURL string) error {
+func (d *ProductData) scrape(productURL string) error {
 	if strings.Contains(productURL, "www.sokmil.com") {
 		return d.sokmil(productURL)
 	} else if strings.Contains(productURL, "dmm.co.jp") {
@@ -88,7 +105,7 @@ func formatDate(dateStr string) string {
 	return strings.ReplaceAll(strings.TrimSpace(dateStr), "/", "-")
 }
 
-func (d *Data) dmm(productURL string) error {
+func (d *ProductData) dmm(productURL string) error {
 	c := colly.NewCollector()
 	var cookies []*http.Cookie
 	cookies = append(cookies, &http.Cookie{
@@ -139,7 +156,7 @@ func (d *Data) dmm(productURL string) error {
 	return nil
 }
 
-func (d *Data) sokmil(productURL string) error {
+func (d *ProductData) sokmil(productURL string) error {
 	c := colly.NewCollector(
 		colly.UserAgent(userAgent),
 	)
@@ -179,12 +196,7 @@ func (d *Data) sokmil(productURL string) error {
 	c.OnHTML("h1.page-title", func(e *colly.HTMLElement) {
 		d.Title = e.Text
 	})
-
 	return c.Visit(productURL)
-}
-
-func validateArgument(url1, url2 string) bool {
-	return strings.Contains(url1, "www.sokmil.com") && strings.Contains(url2, "www.dmm.co.jp")
 }
 
 func sokmilAffiliateURL(productURL string, config *Config) (string, error) {
@@ -219,7 +231,7 @@ func dmmAffiliateURL(productURL string, config *Config) (string, error) {
 	return u.String(), nil
 }
 
-func (d *Data) String(url1 string, url2 string, config *Config) (string, error) {
+func (d *ProductData) String(url1 string, url2 string, config *Config) (string, error) {
 	sokmilAff, err := sokmilAffiliateURL(url1, config)
 	if err != nil {
 		return "", err
@@ -247,6 +259,16 @@ func (d *Data) String(url1 string, url2 string, config *Config) (string, error) 
 	// performer part
 	output += "|"
 
+	var actStrs []string
+	for _, actress := range d.Actresses {
+		if strings.HasSuffix(actress, "?") {
+			actStrs = append(actStrs, strings.TrimRight(actress, "?"))
+		} else {
+			actStrs = append(actStrs, fmt.Sprintf("[[%s]]", actress))
+		}
+	}
+	output += strings.Join(actStrs, actressSeparator)
+
 	// date part
 	output += "|"
 	output += d.Date
@@ -258,41 +280,57 @@ func (d *Data) String(url1 string, url2 string, config *Config) (string, error) 
 }
 
 func _main() int {
-	if len(os.Args) < 4 {
-		fmt.Printf("Usage: %s ID url1 url2\n", os.Args[0])
+	if len(os.Args) < 2 {
+		fmt.Printf("Usage: %s data.yaml\n", os.Args[0])
 		return 1
 	}
 
-	id := strings.ToUpper(os.Args[1])
-	url1 := os.Args[2]
-	url2 := os.Args[3]
+	inputFile := os.Args[1]
+	c, err := os.ReadFile(inputFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read input yaml file: %v\n", err)
+		return 1
+	}
 
-	if !validateArgument(url1, url2) {
-		fmt.Fprintf(os.Stderr, "url1 should be sokmil, url2 should be fanza(url1=%s, url2=%s)\n", url1, url2)
+	var wiki []ProductMetaData
+	if err := yaml.Unmarshal(c, &wiki); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to parse input yaml file(%s): %v\n", inputFile, err)
 		return 1
 	}
 
 	config, err := readConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to read config file: %v", err)
+		fmt.Fprintf(os.Stderr, "failed to read config file: %v\n", err)
 		return 1
 	}
 
-	d := &Data{
-		ID: id,
-	}
-	if err := d.scrape(url1); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		return 1
+	var sb strings.Builder
+	sb.WriteString(tableHeader)
+	sb.WriteRune('\n')
+
+	for _, product := range wiki {
+		pd := &ProductData{
+			ID:        product.ID,
+			Actresses: product.Actresses,
+		}
+
+		if err := pd.scrape(product.SokmilURL); err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			return 1
+		}
+
+		output, err := pd.String(product.SokmilURL, product.FanzaURL, config)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to convert data to string: %v\n", err)
+			return 1
+		}
+
+		sb.WriteString(output)
+		sb.WriteRune('\n')
 	}
 
-	output, err := d.String(url1, url2, config)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to convert data to string: %v\n", err)
-		return 1
-	}
-
-	fmt.Println(output)
+	output := sb.String()
+	fmt.Print(output)
 
 	if err := clipboard.WriteAll(output); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to copy text into clipboard: %v\n", err)
