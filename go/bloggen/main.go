@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -13,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/atotto/clipboard"
+	"github.com/goccy/go-yaml"
 	"github.com/gocolly/colly/v2"
 )
 
@@ -30,12 +30,12 @@ var htmlTemplate = `
 `
 
 type Config struct {
-	Dmm    AffiliateInfo `json:"dmm"`
-	Sokmil AffiliateInfo `json:"sokmil"`
+	Dmm    AffiliateInfo `yaml:"dmm"`
+	Sokmil AffiliateInfo `yaml:"sokmil"`
 }
 
 type AffiliateInfo struct {
-	Id string `json:"id"`
+	Id string `yaml:"id"`
 }
 
 type Data struct {
@@ -52,13 +52,13 @@ func (d *Data) readConfig() error {
 		return err
 	}
 
-	configFile := filepath.Join(dir, ".config", "blog", "config.json")
+	configFile := filepath.Join(dir, ".config", "blog", "config.yaml")
 	file, err := os.Open(configFile)
 	if err != nil {
 		return err
 	}
 
-	return json.NewDecoder(file).Decode(&d.config)
+	return yaml.NewDecoder(file).Decode(&d.config)
 }
 
 func (d *Data) dmm() error {

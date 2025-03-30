@@ -1,9 +1,10 @@
 module bloggen
 
-go 1.20
+go 1.24.1
 
 require (
 	github.com/atotto/clipboard v0.1.4
+	github.com/goccy/go-yaml v1.16.0
 	github.com/gocolly/colly/v2 v2.1.0
 )
 
