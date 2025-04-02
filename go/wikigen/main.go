@@ -48,7 +48,15 @@ func readConfig() (*Config, error) {
 	return conf, err
 }
 
-type ProductData struct {
+type Page struct {
+	Name         string     `yaml:"name"`
+	Summary      string     `yaml:"summary"`
+	RelatedLinks []string   `yaml:"related_links"`
+	Items        []PageItem `yaml:"items"`
+	Products     []*Product
+}
+
+type PageItem struct {
 	ID        string   `yaml:"id"`
 	Title     string   `yaml:"title"`
 	SokmilURL string   `yaml:"sokmil"`
@@ -66,6 +74,8 @@ type Product struct {
 	Config     Config
 	Actresses  []string
 	Note       string
+	SokmilURL  string
+	FanzaURL   string
 }
 
 func (d *Product) scrape(productURL string) error {
@@ -229,37 +239,69 @@ func dmmAffiliateURL(productURL string, config *Config) (string, error) {
 	return u.String(), nil
 }
 
-func (d *Product) String(url1 string, url2 string, config *Config) (string, error) {
-	sokmilAff, err := sokmilAffiliateURL(url1, config)
-	if err != nil {
-		return "", err
-	}
-	dmmAff, err := dmmAffiliateURL(url2, config)
-	if err != nil {
-		return "", err
+func (p *Page) Render(config *Config, onlyItem bool) (string, error) {
+	var sb strings.Builder
+
+	if len(p.Summary) != 0 {
+		sb.WriteString(p.Summary)
+		sb.WriteRune('\n')
+		sb.WriteRune('\n')
 	}
 
-	var sb strings.Builder
+	if !onlyItem {
+		sb.WriteString(tableHeader)
+		sb.WriteRune('\n')
+	}
+
+	for _, pd := range p.Products {
+		err := pd.Render(&sb, config)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to convert data to string: %v\n", err)
+			return "", err
+		}
+		sb.WriteRune('\n')
+	}
+
+	if !onlyItem {
+		sb.WriteRune('\n')
+		sb.WriteString("** 関連ページ\n")
+		for _, link := range p.RelatedLinks {
+			sb.WriteString(fmt.Sprintf("- [[%s]]\n", link))
+		}
+	}
+
+	return sb.String(), nil
+}
+
+func (p *Product) Render(sb *strings.Builder, config *Config) error {
+	sokmilAff, err := sokmilAffiliateURL(p.SokmilURL, config)
+	if err != nil {
+		return err
+	}
+	dmmAff, err := dmmAffiliateURL(p.FanzaURL, config)
+	if err != nil {
+		return err
+	}
 
 	// id part
 	sb.WriteRune(wikiColumnSeparator)
-	sb.WriteString(fmt.Sprintf("[[%s>%s]]", d.ID, dmmAff))
+	sb.WriteString(fmt.Sprintf("[[%s>%s]]", p.ID, dmmAff))
 
 	// image part
 	sb.WriteRune(wikiColumnSeparator)
-	sb.WriteString(fmt.Sprintf("center:[[&ref(%s,180)>%s]]", d.SmallImage, d.LargeImage))
+	sb.WriteString(fmt.Sprintf("center:[[&ref(%s,180)>%s]]", p.SmallImage, p.LargeImage))
 	sb.WriteString(wikiNewLine)
 	sb.WriteString(fmt.Sprintf("[[ソクミル>%s]] [[FANZA>%s]]", sokmilAff, dmmAff))
 
 	// title part
 	sb.WriteRune(wikiColumnSeparator)
-	sb.WriteString(d.Title)
+	sb.WriteString(p.Title)
 
 	// performer part
 	sb.WriteRune(wikiColumnSeparator)
 
 	var actStrs []string
-	for _, actress := range d.Actresses {
+	for _, actress := range p.Actresses {
 		if strings.HasSuffix(actress, "?") {
 			actStrs = append(actStrs, strings.TrimRight(actress, "?"))
 		} else {
@@ -270,14 +312,14 @@ func (d *Product) String(url1 string, url2 string, config *Config) (string, erro
 
 	// release date part
 	sb.WriteRune(wikiColumnSeparator)
-	sb.WriteString(d.Date)
+	sb.WriteString(p.Date)
 
 	// note part
 	sb.WriteRune(wikiColumnSeparator)
-	sb.WriteString(d.Note)
+	sb.WriteString(p.Note)
 	sb.WriteRune(wikiColumnSeparator)
 
-	return sb.String(), nil
+	return nil
 }
 
 func matchID(productID string, ids []string) bool {
@@ -300,6 +342,12 @@ func _main() int {
 		return 1
 	}
 
+	config, err := readConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read config file: %v\n", err)
+		return 1
+	}
+
 	inputFile := os.Args[1]
 	c, err := os.ReadFile(inputFile)
 	if err != nil {
@@ -314,51 +362,39 @@ func _main() int {
 		}
 	}
 
-	var productData []ProductData
-	if err := yaml.Unmarshal(c, &productData); err != nil {
+	var page Page
+	if err := yaml.Unmarshal(c, &page); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse input yaml file(%s): %v\n", inputFile, err)
 		return 1
 	}
 
-	config, err := readConfig()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to read config file: %v\n", err)
-		return 1
-	}
-
-	var sb strings.Builder
-	if len(filterIDs) == 0 {
-		sb.WriteString(tableHeader)
-		sb.WriteRune('\n')
-	}
-
-	for _, product := range productData {
+	for _, item := range page.Items {
 		pd := &Product{
-			ID:        product.ID,
-			Actresses: product.Actresses,
-			Note:      product.Note,
+			ID:        item.ID,
+			Actresses: item.Actresses,
+			Note:      item.Note,
+			SokmilURL: item.SokmilURL,
+			FanzaURL:  item.FanzaURL,
 		}
 
 		if !matchID(pd.ID, filterIDs) {
 			continue
 		}
 
-		if err := pd.scrape(product.SokmilURL); err != nil {
+		if err := pd.scrape(item.SokmilURL); err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			return 1
 		}
 
-		output, err := pd.String(product.SokmilURL, product.FanzaURL, config)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to convert data to string: %v\n", err)
-			return 1
-		}
-
-		sb.WriteString(output)
-		sb.WriteRune('\n')
+		page.Products = append(page.Products, pd)
 	}
 
-	output := sb.String()
+	onlyItem := len(filterIDs) != 0
+	output, err := page.Render(config, onlyItem)
+	if err != nil {
+
+	}
+
 	fmt.Print(output)
 
 	if err := clipboard.WriteAll(output); err != nil {
