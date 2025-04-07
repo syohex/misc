@@ -240,7 +240,7 @@ func dmmAffiliateURL(productURL string, config *Config) (string, error) {
 	return u.String(), nil
 }
 
-func (p *Page) Render(config *Config, onlyItem bool) (string, error) {
+func (p *Page) Render(config *Config, shouldPrintOnlyItem bool) (string, error) {
 	var sb strings.Builder
 
 	if len(p.Summary) != 0 {
@@ -249,7 +249,7 @@ func (p *Page) Render(config *Config, onlyItem bool) (string, error) {
 		sb.WriteRune('\n')
 	}
 
-	if !onlyItem {
+	if !shouldPrintOnlyItem {
 		sb.WriteString(tableHeader)
 		sb.WriteRune('\n')
 	}
@@ -263,7 +263,7 @@ func (p *Page) Render(config *Config, onlyItem bool) (string, error) {
 		sb.WriteRune('\n')
 	}
 
-	if !onlyItem && len(p.RelatedLinks) != 0 {
+	if !shouldPrintOnlyItem && len(p.RelatedLinks) != 0 {
 		sb.WriteRune('\n')
 		sb.WriteString("** 関連ページ\n")
 		for _, link := range p.RelatedLinks {
@@ -355,6 +355,7 @@ func _main() int {
 		return 1
 	}
 
+	shouldPrintOnlyItem := len(filterIDs) != 0
 	for _, item := range page.Items {
 		pd := &Product{
 			ID:        item.ID,
@@ -364,7 +365,7 @@ func _main() int {
 			FanzaURL:  item.FanzaURL,
 		}
 
-		if !slices.Contains(filterIDs, pd.ID) {
+		if shouldPrintOnlyItem && !slices.Contains(filterIDs, pd.ID) {
 			continue
 		}
 
@@ -376,10 +377,10 @@ func _main() int {
 		page.Products = append(page.Products, pd)
 	}
 
-	onlyItem := len(filterIDs) != 0
-	output, err := page.Render(config, onlyItem)
+	output, err := page.Render(config, shouldPrintOnlyItem)
 	if err != nil {
-
+		fmt.Fprintf(os.Stderr, "failed to render page: %v\n", err)
+		return 1
 	}
 
 	fmt.Print(output)
