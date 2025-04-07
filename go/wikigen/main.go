@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/atotto/clipboard"
@@ -322,20 +323,6 @@ func (p *Product) Render(sb *strings.Builder, config *Config) error {
 	return nil
 }
 
-func matchID(productID string, ids []string) bool {
-	if len(ids) == 0 {
-		return true
-	}
-
-	for _, id := range ids {
-		if productID == id {
-			return true
-		}
-	}
-
-	return false
-}
-
 func _main() int {
 	if len(os.Args) < 2 {
 		fmt.Printf("Usage: %s data.yaml\n", os.Args[0])
@@ -377,7 +364,7 @@ func _main() int {
 			FanzaURL:  item.FanzaURL,
 		}
 
-		if !matchID(pd.ID, filterIDs) {
+		if !slices.Contains(filterIDs, pd.ID) {
 			continue
 		}
 
