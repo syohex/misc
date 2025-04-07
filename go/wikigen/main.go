@@ -263,7 +263,7 @@ func (p *Page) Render(config *Config, onlyItem bool) (string, error) {
 		sb.WriteRune('\n')
 	}
 
-	if !onlyItem {
+	if !onlyItem && len(p.RelatedLinks) != 0 {
 		sb.WriteRune('\n')
 		sb.WriteString("** 関連ページ\n")
 		for _, link := range p.RelatedLinks {
