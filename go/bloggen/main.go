@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"html/template"
 	"log"
@@ -118,11 +117,6 @@ func (d *Data) sokmil() error {
 	c := colly.NewCollector(
 		colly.UserAgent(userAgent),
 	)
-	c.WithTransport(&http.Transport{
-		TLSClientConfig: &tls.Config{
-			MinVersion: tls.VersionTLS13,
-		},
-	})
 
 	var cookies []*http.Cookie
 	cookies = append(cookies, &http.Cookie{
