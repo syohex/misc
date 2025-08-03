@@ -1,14 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/atotto/clipboard"
 	"github.com/goccy/go-yaml"
@@ -211,8 +214,25 @@ func stripQueryString(urlStr string) (string, error) {
 	return fmt.Sprintf("%s://%s%s", url.Scheme, url.Host, url.Path), nil
 }
 
+func stringToUTF16LEBytes(s string) []byte {
+	utf16Data := utf16.Encode([]rune(s))
+	buf := new(bytes.Buffer)
+	for _, r := range utf16Data {
+		buf.WriteByte(byte(r))
+		buf.WriteByte(byte(r >> 8))
+	}
+	return buf.Bytes()
+}
+
 func copyToClipboard(text string) error {
-	return clipboard.WriteAll(text)
+	if _, exists := os.LookupEnv("WSLENV"); exists {
+		clipboardPath := "/mnt/c/Windows/System32/clip.exe"
+		cmd := exec.Command(clipboardPath)
+		cmd.Stdin = bytes.NewReader(stringToUTF16LEBytes(text))
+		return cmd.Run()
+	} else {
+		return clipboard.WriteAll(text)
+	}
 }
 
 func main() {
