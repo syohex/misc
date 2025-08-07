@@ -10,9 +10,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/atotto/clipboard"
 	"github.com/goccy/go-yaml"
 	"github.com/gocolly/colly/v2"
+	"github.com/syohex/clipboard"
 )
 
 const (
@@ -385,7 +385,7 @@ func _main() int {
 
 	fmt.Print(output)
 
-	if err := clipboard.WriteAll(output); err != nil {
+	if err := clipboard.Write(output); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to copy text into clipboard: %v\n", err)
 		return 1
 	}

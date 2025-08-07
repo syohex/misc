@@ -1,11 +1,13 @@
 module wikigen
 
-go 1.24.4
+go 1.24.5
+
+toolchain go1.24.6
 
 require (
-	github.com/atotto/clipboard v0.1.4
 	github.com/goccy/go-yaml v1.18.0
 	github.com/gocolly/colly/v2 v2.2.0
+	github.com/syohex/clipboard v0.0.0-20250804154251-b66f0fc5d811
 )
 
 require (
