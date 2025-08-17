@@ -6,3 +6,5 @@
 # C#
 obj/
 bin/
+publish/
+*.DotSettings.user
