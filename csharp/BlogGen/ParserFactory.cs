@@ -9,6 +9,11 @@ public static class ParserFactory
             return new DmmParser();
         }
 
+        if (url.Contains("sokmil.com"))
+        {
+            return new SokmilParser();
+        }
+
         throw new Exception($"Unsupported site: {url}");
     }
 }
