@@ -1,36 +1,54 @@
-﻿using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Playwright;
+﻿using System.Diagnostics;
+using AngleSharp;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace BlogGen;
 
 public class SokmilParser : IParser
 {
+    private const string UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36";
+
     public async Task<Product> Parse(string url, Config config)
     {
-        using var playwright = await Playwright.CreateAsync();
-        var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = false });
-        var context = await browser.NewContextAsync();
-
-        var cookie = new Cookie
+        var processInfo = new ProcessStartInfo
         {
-            Name = "AGEAUTH",
-            Value = "ok",
-            Path = "/",
-            Domain = ".sokmil.com",
-            HttpOnly = true,
-            Secure = true,
+            FileName = "curl",
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
         };
-        await context.AddCookiesAsync([cookie]);
 
-        var page = await context.NewPageAsync();
-        await page.GotoAsync(url);
+        var curlArgs = new[]
+        {
+            "-A", UserAgent,
+            "--tlsv1.2",
+            "--tls-max", "1.2",
+            "-b", "AGEAUTH=ok",
+            "-L",
+            "-s",
+            url
+        };
+
+        foreach (var arg in curlArgs)
+        {
+            processInfo.ArgumentList.Add(arg);
+        }
+
+        var proc = new Process { StartInfo = processInfo };
+        proc.Start();
+
+        var output = await proc.StandardOutput.ReadToEndAsync();
+        await proc.WaitForExitAsync();
+
+        var context = BrowsingContext.New();
+        var document = await context.OpenAsync(req => req.Content(output).Address(url));
 
         var product = new Product();
 
-        var titleElement = await page.QuerySelectorAsync("h1.page-title");
+        var titleElement = document.QuerySelector("h1.page-title");
         if (titleElement != null)
         {
-            var title = await titleElement.TextContentAsync();
+            var title = titleElement.TextContent;
             if (title == null)
             {
                 throw new Exception($"Cannot get title from {url}");
@@ -39,10 +57,10 @@ public class SokmilParser : IParser
             product.Title = title;
         }
 
-        var packageElement = await page.QuerySelectorAsync("a.sokmil-lightbox-jacket");
+        var packageElement = document.QuerySelector("a.sokmil-lightbox-jacket");
         if (packageElement != null)
         {
-            var title = await packageElement.GetAttributeAsync("href");
+            var title = packageElement.GetAttribute("href");
             if (title == null)
             {
                 throw new Exception($"Cannot get package from {url}");
@@ -50,9 +68,6 @@ public class SokmilParser : IParser
 
             product.Image = title;
         }
-
-        await context.CloseAsync();
-        await browser.CloseAsync();
 
         product.Url = ConstructAffiliateUrl(url, config);
         return product;
