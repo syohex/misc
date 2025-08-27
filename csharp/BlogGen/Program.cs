@@ -1,4 +1,5 @@
 ﻿using BlogGen;
+using Scriban;
 
 if (args.Length < 1)
 {
@@ -18,8 +19,17 @@ var url = args[0];
 var parser = ParserFactory.Create(url);
 var product = await parser.Parse(url, config);
 
-Console.WriteLine($"Title = {product.Title}");
-Console.WriteLine($"Image = {product.Image}");
-Console.WriteLine($"Url = {product.Url}");
+var template = """
+<a href="{{ product.url }}" target="_blank">
+<img src="{{ product.image }}" alt="{{ product.title }}" />
+</a>
+
+<p>
+</p>
+""";
+
+var t = Template.Parse(template);
+var result = t.Render(new { product });
+Console.WriteLine(result);
 
 await Clipboard.Copy(product.Title);

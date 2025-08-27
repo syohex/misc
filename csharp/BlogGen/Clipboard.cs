@@ -32,13 +32,22 @@ public static class Clipboard
         proc.EnableRaisingEvents = false;
         proc.Start();
 
-        await proc.StandardInput.WriteAsync(text);
+        if (IsWsl())
+        {
+            await proc.StandardInput.BaseStream.WriteAsync(ConvertToUTF16(text));
+        }
+        else
+        {
+            await proc.StandardInput.WriteAsync(text);
+        }
+
         await proc.StandardInput.FlushAsync();
         proc.StandardInput.Close();
 
-        var stdOutTask = proc.StandardOutput.ReadToEndAsync();
-        await Task.WhenAll(stdOutTask, proc.WaitForExitAsync());
+        await proc.WaitForExitAsync();
     }
+
+    private static byte[] ConvertToUTF16(string text) => Encoding.Unicode.GetBytes(text);
 
     private static ProcessStartInfo GetProcessStartInfoForWindows()
     {
@@ -47,10 +56,8 @@ public static class Clipboard
         {
             FileName = clipCommandPath,
             RedirectStandardInput = true,
-            RedirectStandardOutput = true,
             UseShellExecute = false,
             CreateNoWindow = true,
-            StandardOutputEncoding = Encoding.UTF8,
         };
     }
 
@@ -61,10 +68,8 @@ public static class Clipboard
         {
             FileName = clipCommandPath,
             RedirectStandardInput = true,
-            RedirectStandardOutput = true,
             UseShellExecute = false,
             CreateNoWindow = true,
-            StandardOutputEncoding = Encoding.UTF8,
         };
     }
 
