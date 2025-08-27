@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Playwright;
+using System.Web;
 
 namespace BlogGen;
 
@@ -63,9 +64,23 @@ public class DmmParser : IParser
 
     private string ConstructAffiliateUrl(string url, Config config)
     {
+        // strip unnecessary query parameters
+        var uri = new Uri(url);
+        var query = HttpUtility.ParseQueryString(uri.Query);
+        var keys = query.AllKeys;
+        foreach (var key in keys)
+        {
+            if (key != "id")
+            {
+                query.Remove(key);
+            }
+        }
+
+        var strippedUri = $"{uri.Scheme}://{uri.Host}{uri.AbsolutePath}?{query}";
+
         var queries = new Dictionary<string, string?>
         {
-            ["lurl"] = url,
+            ["lurl"] = strippedUri,
             ["af_id"] = config.Dmm.Id,
             ["ch"] = "link_tool",
             ["ch_id"] = "link",

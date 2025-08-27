@@ -4,7 +4,7 @@ INSTALL_DIR=~/local/bloggen/bin
 
 all: $(LINUX_BINARY)
 
-$(LINUX_BINARY):
+$(LINUX_BINARY): *.cs
 	dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true
 
 install: $(LINUX_BINARY)
