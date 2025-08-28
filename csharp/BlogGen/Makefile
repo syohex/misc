@@ -10,6 +10,7 @@ $(LINUX_BINARY): *.cs
 install: $(LINUX_BINARY)
 	install -d $(INSTALL_DIR)
 	cp $(LINUX_BINARY) $(INSTALL_DIR)/bloggen
+	rm -rf $(INSTALL_DIR)/.playwright
 	cp -r bin/Release/$(DOTNET_VERSION)/linux-x64/.playwright $(INSTALL_DIR)
 
 .PHONY: clean
