@@ -1,14 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
+	"text/template"
 
-	"github.com/syohex/clipboard"
 	"github.com/goccy/go-yaml"
+	"github.com/syohex/clipboard"
 )
 
 type Config struct {
@@ -39,16 +40,66 @@ func readConfig() (*Config, error) {
 
 type Actress struct {
 	Name         string            `yaml:"name"`
-	Aliases      []string          `yaml:"aliases"`
+	Image        string            `yaml:"image"`
+	Aliases      map[string]string `yaml:"aliases"`
 	SNS          map[string]string `yaml:"sns"`
 	Instagram    string            `yaml:"instagram"`
 	Tiktok       string            `yaml:"tictok"`
-	Products     map[string]string `yaml:"products"`
+	Fanza        string            `yaml:"fanza"`
+	Sokmil       string            `yaml:"sokmil"`
 	RelatedPages []string          `yaml:"related_pages"`
 }
 
-func (a *Actress) Render(conf *Config) {
+var pageTemplate = `&ref({{.Image}})
 
+** 別名
+{{range $name, $url := .Aliases}}- [[{{$name}}>{{$url}}]]}
+{{end}}
+** 作品リンク
+- [[FANZA>{{.Fanza}}]]
+- [[Sokmil>{{.Sokmil}}]]
+
+** SNS
+{{range $name, $val := .SNS }}- {{ $name }}: {{ $val }}
+{{end}}
+** 関連ページ
+{{range .RelatedPages}}- [[{{.}}]]
+{{end}}
+`
+
+func (a *Actress) Render(conf *Config) (string, error) {
+	var err error
+
+	a.Fanza, err = dmmAffiliateURL(a.Fanza, conf)
+	if err != nil {
+		return "", err
+	}
+
+	a.Sokmil, err = sokmilAffiliateURL(a.Sokmil, conf)
+	if err != nil {
+		return "", err
+	}
+
+	for k, v := range a.Aliases {
+		affiliateURL, err := dmmAffiliateURL(v, conf)
+		if err != nil {
+			return "", err
+		}
+		a.Aliases[k] = affiliateURL
+	}
+
+	t, err := template.New("page").Parse(pageTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	b := bytes.NewBufferString("")
+	err = t.Execute(b, a)
+	if err != nil {
+		return "", err
+	}
+
+	return b.String(), nil
 }
 
 func sokmilAffiliateURL(productURL string, config *Config) (string, error) {
@@ -107,17 +158,19 @@ func _main() int {
 		fmt.Fprintf(os.Stderr, "failed to read config file: %v\n", err)
 		return 1
 	}
-	fmt.Println(config)
 
-	var sb strings.Builder
-	output := sb.String()
-	fmt.Print(output)
-
-	if err := clipboard.Write(output); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to copy text into clipboard: %v\n", err)
+	output, err := actress.Render(config)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to render: %v\n", err)
 		return 1
 	}
 
+	if err := clipboard.Write(output); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to copy output into clipboard: %v\n", err)
+		return 1
+	}
+
+	fmt.Print(output)
 	return 0
 }
 
