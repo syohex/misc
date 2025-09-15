@@ -53,7 +53,7 @@ type Actress struct {
 var pageTemplate = `&ref({{.Image}})
 
 ** 別名
-{{range $name, $url := .Aliases}}- [[{{$name}}>{{$url}}]]}
+{{range $name, $url := .Aliases}}- [[{{$name}}>{{$url}}]]
 {{end}}
 ** 作品リンク
 - [[FANZA>{{.Fanza}}]]
