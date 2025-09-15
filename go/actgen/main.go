@@ -64,8 +64,7 @@ var pageTemplate = `&ref({{.Image}})
 {{end}}
 ** 関連ページ
 {{range .RelatedPages}}- [[{{.}}]]
-{{end}}
-`
+{{end}}`
 
 func (a *Actress) Render(conf *Config) (string, error) {
 	var err error
