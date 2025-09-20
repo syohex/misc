@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
-	"text/template"
+	"sort"
+	"strings"
 
 	"github.com/goccy/go-yaml"
 	"github.com/syohex/clipboard"
@@ -50,21 +50,23 @@ type Actress struct {
 	RelatedPages []string          `yaml:"related_pages"`
 }
 
-var pageTemplate = `&ref({{.Image}})
+func sortMap(m map[string]string) ([]string, []string) {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
 
-** 別名
-{{range $name, $url := .Aliases}}- [[{{$name}}>{{$url}}]]
-{{end}}
-** 作品リンク
-- [[FANZA>{{.Fanza}}]]
-- [[Sokmil>{{.Sokmil}}]]
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
 
-** SNS
-{{range $name, $val := .SNS }}- {{ $name }}: {{ $val }}
-{{end}}
-** 関連ページ
-{{range .RelatedPages}}- [[{{.}}]]
-{{end}}`
+	values := make([]string, 0, len(m))
+	for _, k := range keys {
+		values = append(values, m[k])
+	}
+
+	return keys, values
+}
 
 func (a *Actress) Render(conf *Config) (string, error) {
 	var err error
@@ -87,18 +89,48 @@ func (a *Actress) Render(conf *Config) (string, error) {
 		a.Aliases[k] = affiliateURL
 	}
 
-	t, err := template.New("page").Parse(pageTemplate)
-	if err != nil {
-		return "", err
+	var sb strings.Builder
+	if a.Image != "" {
+		sb.WriteString(fmt.Sprintf("&ref(%s)\n", a.Image))
+		sb.WriteString("\n")
 	}
 
-	b := bytes.NewBufferString("")
-	err = t.Execute(b, a)
-	if err != nil {
-		return "", err
+	if len(a.Aliases) > 0 {
+		sb.WriteString("\n")
+		sb.WriteString("** 別名\n")
+		for name, url := range a.Aliases {
+			sb.WriteString(fmt.Sprintf("- [[%s>%s]]\n", name, url))
+		}
+		sb.WriteString("\n")
 	}
 
-	return b.String(), nil
+	sb.WriteString("** 作品リンク\n")
+	if a.Fanza != "" {
+		sb.WriteString(fmt.Sprintf("- [[FANZA>%s]]\n", a.Fanza))
+	}
+	if a.Sokmil != "" {
+		sb.WriteString(fmt.Sprintf("- [[Sokmil>%s]]\n", a.Sokmil))
+	}
+	sb.WriteString("\n")
+
+	if len(a.SNS) > 0 {
+		sb.WriteString("** SNS\n")
+
+		names, urls := sortMap(a.SNS)
+		for i := range names {
+			sb.WriteString(fmt.Sprintf("- %s: %s\n", names[i], urls[i]))
+		}
+		sb.WriteString("\n")
+	}
+
+	if len(a.RelatedPages) > 0 {
+		sb.WriteString("** 関連ページ\n")
+		for _, url := range a.RelatedPages {
+			sb.WriteString(fmt.Sprintf("- [[%s]]\n", url))
+		}
+	}
+
+	return sb.String(), nil
 }
 
 func sokmilAffiliateURL(productURL string, config *Config) (string, error) {
