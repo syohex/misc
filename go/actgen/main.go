@@ -96,7 +96,6 @@ func (a *Actress) Render(conf *Config) (string, error) {
 	}
 
 	if len(a.Aliases) > 0 {
-		sb.WriteString("\n")
 		sb.WriteString("** 別名\n")
 		for name, url := range a.Aliases {
 			sb.WriteString(fmt.Sprintf("- [[%s>%s]]\n", name, url))
