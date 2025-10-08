@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -325,7 +326,7 @@ func (p *Product) Render(sb *strings.Builder, config *Config) error {
 
 func _main() int {
 	if len(os.Args) < 2 {
-		fmt.Printf("Usage: %s data.yaml\n", os.Args[0])
+		fmt.Printf("Usage: %s data.yaml filter...\n", os.Args[0])
 		return 1
 	}
 
@@ -343,9 +344,19 @@ func _main() int {
 	}
 
 	var filterIDs []string
+	var filterRegexp *regexp.Regexp
 	if len(os.Args) > 2 {
-		for _, id := range os.Args[2:] {
-			filterIDs = append(filterIDs, strings.ToUpper(id))
+		if len(os.Args) == 3 && strings.HasPrefix(os.Args[2], "/") {
+			regexStr := strings.Trim(os.Args[2], "/")
+			filterRegexp, err = regexp.Compile(regexStr)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to compile regexp(%s): %v\n", regexStr, err)
+				return 1
+			}
+		} else {
+			for _, id := range os.Args[2:] {
+				filterIDs = append(filterIDs, strings.ToUpper(id))
+			}
 		}
 	}
 
@@ -355,7 +366,7 @@ func _main() int {
 		return 1
 	}
 
-	shouldPrintOnlyItem := len(filterIDs) != 0
+	shouldPrintOnlyItem := len(filterIDs) != 0 || filterRegexp != nil
 	for _, item := range page.Items {
 		pd := &Product{
 			ID:        item.ID,
@@ -365,7 +376,11 @@ func _main() int {
 			FanzaURL:  item.FanzaURL,
 		}
 
-		if shouldPrintOnlyItem && !slices.Contains(filterIDs, pd.ID) {
+		if filterRegexp != nil && !filterRegexp.MatchString(item.ID) {
+			continue
+		}
+
+		if filterIDs != nil && !slices.Contains(filterIDs, pd.ID) {
 			continue
 		}
 
