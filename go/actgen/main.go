@@ -82,11 +82,15 @@ func (a *Actress) Render(conf *Config) (string, error) {
 	}
 
 	for k, v := range a.Aliases {
-		affiliateURL, err := dmmAffiliateURL(v, conf)
-		if err != nil {
-			return "", err
+		if v == "" {
+			a.Aliases[k] = ""
+		} else {
+			affiliateURL, err := dmmAffiliateURL(v, conf)
+			if err != nil {
+				return "", err
+			}
+			a.Aliases[k] = affiliateURL
 		}
-		a.Aliases[k] = affiliateURL
 	}
 
 	var sb strings.Builder
@@ -98,7 +102,11 @@ func (a *Actress) Render(conf *Config) (string, error) {
 	if len(a.Aliases) > 0 {
 		sb.WriteString("** 別名\n")
 		for name, url := range a.Aliases {
-			sb.WriteString(fmt.Sprintf("- [[%s>%s]]\n", name, url))
+			if url == "" {
+				sb.WriteString(fmt.Sprintf("- %s\n", name))
+			} else {
+				sb.WriteString(fmt.Sprintf("- [[%s>%s]]\n", name, url))
+			}
 		}
 		sb.WriteString("\n")
 	}
