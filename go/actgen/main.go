@@ -125,7 +125,9 @@ func (a *Actress) Render(conf *Config) (string, error) {
 
 		names, urls := sortMap(a.SNS)
 		for i := range names {
-			sb.WriteString(fmt.Sprintf("- %s: %s\n", names[i], urls[i]))
+			if urls[i] != "" {
+				sb.WriteString(fmt.Sprintf("- %s: %s\n", names[i], urls[i]))
+			}
 		}
 		sb.WriteString("\n")
 	}
