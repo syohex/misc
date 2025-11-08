@@ -13,6 +13,10 @@ install: $(LINUX_BINARY)
 	rm -rf $(INSTALL_DIR)/.playwright
 	cp -r bin/Release/$(DOTNET_VERSION)/linux-x64/.playwright $(INSTALL_DIR)
 
+.PHONY: install-browser
+install-browser:
+	pwsh ./bin/Release/$(DOTNET_VERSION)playwright.ps1 install chromium
+
 .PHONY: clean
 clean:
 	dotnet clean
