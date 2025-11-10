@@ -33,7 +33,7 @@ var product = await parser.Parse(url, config);
 string template = string.Empty;
 if (hasHeader)
 {
-    template = "<h2>{{ product.title }}<h2>\n\n";
+    template = "<h2>{{ product.title }}</h2>\n\n";
 }
 
 template += """
