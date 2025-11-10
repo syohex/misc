@@ -49,4 +49,11 @@ var t = Template.Parse(template);
 var result = t.Render(new { product });
 Console.WriteLine(result);
 
-await Clipboard.Copy(product.Title);
+if (hasHeader)
+{
+    await Clipboard.Copy(result);
+}
+else
+{
+    await Clipboard.Copy(product.Title);
+}
