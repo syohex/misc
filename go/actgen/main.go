@@ -39,15 +39,13 @@ func readConfig() (*Config, error) {
 }
 
 type Actress struct {
-	Name         string            `yaml:"name"`
-	Image        string            `yaml:"image"`
-	Aliases      map[string]string `yaml:"aliases"`
-	SNS          map[string]string `yaml:"sns"`
-	Instagram    string            `yaml:"instagram"`
-	Tiktok       string            `yaml:"tictok"`
-	Fanza        string            `yaml:"fanza"`
-	Sokmil       string            `yaml:"sokmil"`
-	RelatedPages []string          `yaml:"related_pages"`
+	Name         string              `yaml:"name"`
+	Image        string              `yaml:"image"`
+	Aliases      map[string]string   `yaml:"aliases"`
+	SNS          map[string]string   `yaml:"sns"`
+	Fanza        string              `yaml:"fanza"`
+	Sokmil       string              `yaml:"sokmil"`
+	RelatedPages map[string][]string `yaml:"related_pages"`
 }
 
 func sortMap(m map[string]string) ([]string, []string) {
@@ -116,7 +114,7 @@ func (a *Actress) Render(conf *Config) (string, error) {
 		sb.WriteString(fmt.Sprintf("- [[FANZA>%s]]\n", a.Fanza))
 	}
 	if a.Sokmil != "" {
-		sb.WriteString(fmt.Sprintf("- [[Sokmil>%s]]\n", a.Sokmil))
+		sb.WriteString(fmt.Sprintf("- [[ソクミル>%s]]\n", a.Sokmil))
 	}
 	sb.WriteString("\n")
 
@@ -133,9 +131,27 @@ func (a *Actress) Render(conf *Config) (string, error) {
 	}
 
 	if len(a.RelatedPages) > 0 {
+		var makers []string
+		for k := range a.RelatedPages {
+			makers = append(makers, k)
+		}
+
+		sort.Slice(makers, func(i, j int) bool {
+			return makers[i] < makers[j]
+		})
+
 		sb.WriteString("** 関連ページ\n")
-		for _, url := range a.RelatedPages {
-			sb.WriteString(fmt.Sprintf("- [[%s]]\n", url))
+		for _, maker := range makers {
+			sb.WriteString(fmt.Sprintf("- %s\n", maker))
+
+			products := a.RelatedPages[maker]
+			sort.Slice(products, func(i, j int) bool {
+				return products[i] < products[j]
+			})
+
+			for _, product := range products {
+				sb.WriteString(fmt.Sprintf("-- [[%s]]\n", product))
+			}
 		}
 	}
 

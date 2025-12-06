@@ -1,4 +1,4 @@
-github.com/goccy/go-yaml v1.16.0 h1:d7m1G7A0t+logajVtklHfDYJs2Et9g3gHwdBNNFou0w=
-github.com/goccy/go-yaml v1.16.0/go.mod h1:XBurs7gK8ATbW4ZPGKgcbrY1Br56PdM69F7LkFRi1kA=
+github.com/goccy/go-yaml v1.19.0 h1:EmkZ9RIsX+Uq4DYFowegAuJo8+xdX3T/2dwNPXbxEYE=
+github.com/goccy/go-yaml v1.19.0/go.mod h1:XBurs7gK8ATbW4ZPGKgcbrY1Br56PdM69F7LkFRi1kA=
 github.com/syohex/clipboard v0.0.0-20250804154251-b66f0fc5d811 h1:9ute5lWwgqlp2h9XAaXThUBIe1haFUwQARS3XG04vUk=
 github.com/syohex/clipboard v0.0.0-20250804154251-b66f0fc5d811/go.mod h1:z6DoRubWvZlYDshBEBW/WAGt31xZ/MrOHIaEO6ueEWA=
