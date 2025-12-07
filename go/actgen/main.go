@@ -68,6 +68,8 @@ func sortMap(m map[string]string) ([]string, []string) {
 
 func (a *Actress) Render(conf *Config) (string, error) {
 	var err error
+	hasFanzaUrl := a.Fanza != ""
+	hasSokmilUrl := a.Sokmil != ""
 
 	a.Fanza, err = dmmAffiliateURL(a.Fanza, conf)
 	if err != nil {
@@ -109,12 +111,14 @@ func (a *Actress) Render(conf *Config) (string, error) {
 		sb.WriteString("\n")
 	}
 
-	sb.WriteString("** 作品リンク\n")
-	if a.Fanza != "" {
-		sb.WriteString(fmt.Sprintf("- [[FANZA>%s]]\n", a.Fanza))
-	}
-	if a.Sokmil != "" {
-		sb.WriteString(fmt.Sprintf("- [[ソクミル>%s]]\n", a.Sokmil))
+	if hasFanzaUrl || hasSokmilUrl {
+		sb.WriteString("** 作品リンク\n")
+		if hasFanzaUrl {
+			sb.WriteString(fmt.Sprintf("- [[FANZA>%s]]\n", a.Fanza))
+		}
+		if hasSokmilUrl {
+			sb.WriteString(fmt.Sprintf("- [[ソクミル>%s]]\n", a.Sokmil))
+		}
 	}
 	sb.WriteString("\n")
 
