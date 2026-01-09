@@ -21,45 +21,93 @@ type Actress struct {
 	RelatedPages map[string][]string `yaml:"related_pages"`
 }
 
+var dirMap map[string][]string
+var kanaMap map[string][]string
+
+func init() {
+	dirMap = map[string][]string{
+		"a":  {"a", "i", "u", "e", "o"},
+		"ka": {"ka", "ki", "ku", "ke", "ko"},
+		"sa": {"sa", "shi", "su", "se", "so"},
+		"ta": {"ta", "chi", "tsu", "te", "to"},
+		"na": {"na", "ni", "nu", "ne", "no"},
+		"ha": {"ha", "hi", "fu", "he", "ho"},
+		"ma": {"ma", "mi", "mu", "me", "mo"},
+		"ya": {"ya", "yu", "yo"},
+		"ra": {"ra", "ri", "ru", "re", "ro"},
+		"wa": {"wa"},
+	}
+
+	kanaMap = map[string][]string{
+		"a":  {"あ", "い", "う", "え", "お"},
+		"ka": {"か", "き", "く", "け", "こ"},
+		"sa": {"さ", "し", "す", "せ", "そ"},
+		"ta": {"た", "ち", "つ", "て", "と"},
+		"na": {"な", "に", "ぬ", "ね", "の"},
+		"ha": {"は", "ひ", "ふ", "へ", "ほ"},
+		"ma": {"ま", "み", "む", "め", "も"},
+		"ya": {"や", "ゆ", "よ"},
+		"ra": {"ら", "り", "る", "れ", "ろ"},
+		"wa": {"わ"},
+	}
+}
+
 func _main() int {
 	if len(os.Args) < 2 {
 		fmt.Printf("Usage: %s data.yaml\n", os.Args[0])
 		return 1
 	}
 
-	inputDir := os.Args[1]
-	entries, err := os.ReadDir(inputDir)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to read directory %s: %v\n", inputDir, err)
+	input := os.Args[1]
+	if _, ok := dirMap[input]; !ok {
+		fmt.Fprintf(os.Stderr, "invalid input: %s. Input must be a, ka, sa, ta, na, ha, ma, ya, ra, wa\n", input)
 		return 1
 	}
 
-	var names []string
-	for _, entry := range entries {
-		yamlPath := filepath.Join(inputDir, entry.Name())
-
-		f, err := os.ReadFile(yamlPath)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to read file %s: %v\n", yamlPath, err)
-			return 1
-		}
-
-		var actress Actress
-		if err := yaml.Unmarshal(f, &actress); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to unmarshal yaml file %s: %v\n", yamlPath, err)
-			return 1
-		}
-
-		names = append(names, actress.Name)
-	}
-
-	sort.Slice(names, func(i, j int) bool {
-		return names[i] < names[j]
-	})
-
 	var sb strings.Builder
-	for _, name := range names {
-		sb.WriteString(fmt.Sprintf("- [[%s]]\n", name))
+	kanas := kanaMap[input]
+	for i, dir := range dirMap[input] {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to read directory %s: %v\n", dir, err)
+			return 1
+		}
+
+		var names []string
+		for _, entry := range entries {
+			yamlPath := filepath.Join(dir, entry.Name())
+
+			f, err := os.ReadFile(yamlPath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to read file %s: %v\n", yamlPath, err)
+				return 1
+			}
+
+			var actress Actress
+			if err := yaml.Unmarshal(f, &actress); err != nil {
+				fmt.Fprintf(os.Stderr, "failed to unmarshal yaml file %s: %v\n", yamlPath, err)
+				return 1
+			}
+
+			names = append(names, actress.Name)
+		}
+
+		if len(names) == 0 {
+			continue
+		}
+
+		sort.Slice(names, func(i, j int) bool {
+			return names[i] < names[j]
+		})
+
+		sb.WriteString(fmt.Sprintf("**%s\n", kanas[i]))
+		for _, name := range names {
+			sb.WriteString(fmt.Sprintf("- [[%s]]\n", name))
+		}
+
+		if i != len(dirMap[input])-1 {
+			sb.WriteString("\n")
+		}
 	}
 
 	output := sb.String()
@@ -68,7 +116,7 @@ func _main() int {
 		return 1
 	}
 
-	fmt.Print(output)
+	fmt.Println(output)
 	return 0
 }
 
