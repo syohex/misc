@@ -73,7 +73,10 @@ func _main() int {
 			return 1
 		}
 
-		var names []string
+		var actresses []struct {
+			Name    string
+			Aliases []string
+		}
 		for _, entry := range entries {
 			yamlPath := filepath.Join(dir, entry.Name())
 
@@ -89,20 +92,39 @@ func _main() int {
 				return 1
 			}
 
-			names = append(names, actress.Name)
+			aliases := []string{}
+			for alias := range actress.Aliases {
+				aliases = append(aliases, alias)
+			}
+			sort.Slice(aliases, func(i, j int) bool {
+				return aliases[i] < aliases[j]
+			})
+
+			actresses = append(actresses, struct {
+				Name    string
+				Aliases []string
+			}{
+				Name:    actress.Name,
+				Aliases: aliases,
+			})
 		}
 
-		if len(names) == 0 {
+		if len(actresses) == 0 {
 			continue
 		}
 
-		sort.Slice(names, func(i, j int) bool {
-			return names[i] < names[j]
+		sort.Slice(actresses, func(i, j int) bool {
+			return actresses[i].Name < actresses[j].Name
 		})
 
 		sb.WriteString(fmt.Sprintf("**%s\n", kanas[i]))
-		for _, name := range names {
-			sb.WriteString(fmt.Sprintf("- [[%s]]\n", name))
+		for _, actress := range actresses {
+			if len(actress.Aliases) == 0 {
+				sb.WriteString(fmt.Sprintf("- [[%s]]\n", actress.Name))
+			} else {
+				aliasList := strings.Join(actress.Aliases, ", ")
+				sb.WriteString(fmt.Sprintf("- [[%s]] (別名義 %s)\n", actress.Name, aliasList))
+			}
 		}
 
 		if i != len(dirMap[input])-1 {
