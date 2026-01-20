@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -19,6 +20,11 @@ type Actress struct {
 	Fanza        string              `yaml:"fanza"`
 	Sokmil       string              `yaml:"sokmil"`
 	RelatedPages map[string][]string `yaml:"related_pages"`
+}
+
+type ActressNameData struct {
+	Name    string
+	Aliases []string
 }
 
 var dirMap map[string][]string
@@ -73,10 +79,7 @@ func _main() int {
 			return 1
 		}
 
-		var actresses []struct {
-			Name    string
-			Aliases []string
-		}
+		var actresses []ActressNameData
 		for _, entry := range entries {
 			yamlPath := filepath.Join(dir, entry.Name())
 
@@ -96,9 +99,7 @@ func _main() int {
 			for alias := range actress.Aliases {
 				aliases = append(aliases, alias)
 			}
-			sort.Slice(aliases, func(i, j int) bool {
-				return aliases[i] < aliases[j]
-			})
+			slices.Sort(aliases)
 
 			actresses = append(actresses, struct {
 				Name    string
