@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -140,18 +141,14 @@ func (a *Actress) Render(conf *Config) (string, error) {
 			makers = append(makers, k)
 		}
 
-		sort.Slice(makers, func(i, j int) bool {
-			return makers[i] < makers[j]
-		})
+		slices.Sort(makers)
 
 		sb.WriteString("** 関連ページ\n")
 		for _, maker := range makers {
 			sb.WriteString(fmt.Sprintf("- %s\n", maker))
 
 			products := a.RelatedPages[maker]
-			sort.Slice(products, func(i, j int) bool {
-				return products[i] < products[j]
-			})
+			slices.Sort(products)
 
 			for _, product := range products {
 				sb.WriteString(fmt.Sprintf("-- [[%s]]\n", product))
