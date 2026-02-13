@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/goccy/go-yaml"
@@ -55,9 +54,7 @@ func sortMap(m map[string]string) ([]string, []string) {
 		keys = append(keys, k)
 	}
 
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
+	slices.Sort(keys)
 
 	values := make([]string, 0, len(m))
 	for _, k := range keys {
